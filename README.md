@@ -1,4 +1,8 @@
-# Getting Started with Create React App
+# Appointment Booking System
+### Capstone Project – HTTP 5310
+**MERN-based Full-Stack Application**
+
+## Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
@@ -68,3 +72,6 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+**MERN-based Full-Stack Application**
+**MERN-based Full-Stack Application**
+>>>>>>> 2832cd5dacf008a113773e4a046bbc2b456580ff
