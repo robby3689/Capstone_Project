@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import API from '../api'; // Connects to Render
 
 const Booking = () => {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [service, setService] = useState('General Consultation');
   const [isClosed, setIsClosed] = useState(false); 
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const darkGreen = '#1b4332';
@@ -21,24 +22,20 @@ const Booking = () => {
   const handleDateChange = (e) => {
     const selectedDate = e.target.value;
     setDate(selectedDate);
-
     const day = new Date(selectedDate).getUTCDay();
-    if (day === 0) {
-      setIsClosed(true);
-    } else {
-      setIsClosed(false);
-    }
+    setIsClosed(day === 0); 
   };
 
   const handleBooking = async (e) => {
     e.preventDefault();
     if (!time) return alert("Please select a time slot");
-    if (isClosed) return alert("Clinic is closed on Sundays. Please choose another date.");
+    if (isClosed) return alert("Clinic is closed on Sundays.");
     
+    setLoading(true);
     const userId = localStorage.getItem('userId');
 
     try {
-      await axios.post('http://localhost:5000/api/appointments/book', {
+      await API.post('/appointments/book', {
         userId,
         date,
         time,
@@ -48,14 +45,15 @@ const Booking = () => {
       navigate('/dashboard');
     } catch (err) {
       alert("Error: Could not save booking. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // UI Styles
-  const containerStyle = { maxWidth: '1000px', margin: '40px auto', padding: '0 20px', display: 'flex', gap: '40px', alignItems: 'flex-start' };
-  const cardStyle = { flex: 1, backgroundColor: 'white', padding: '40px', borderRadius: '16px', boxShadow: '0 10px 30px rgba(27, 67, 50, 0.05)', borderTop: `6px solid ${isClosed ? '#e74c3c' : primaryGreen}` };
+  const containerStyle = { maxWidth: '1000px', margin: '40px auto', padding: '0 20px', display: 'flex', gap: '40px', alignItems: 'flex-start', minHeight: '70vh' };
+  const cardStyle = { flex: 1, backgroundColor: 'white', padding: '40px', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', borderTop: `6px solid ${isClosed ? '#e74c3c' : primaryGreen}` };
   const labelStyle = { display: 'block', marginBottom: '8px', fontWeight: '600', color: darkGreen };
-  const inputStyle = { width: '100%', padding: '12px', marginBottom: '20px', borderRadius: '8px', border: '1px solid #ddd', boxSizing: 'border-box', fontSize: '15px', backgroundColor: isClosed ? '#fff5f5' : 'white' };
+  const inputStyle = { width: '100%', padding: '12px', marginBottom: '20px', borderRadius: '8px', border: '1px solid #ddd', boxSizing: 'border-box', fontSize: '15px' };
 
   return (
     <div style={containerStyle}>
@@ -67,78 +65,48 @@ const Booking = () => {
         </p>
         
         <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f1f8f5', borderRadius: '12px', border: `1px solid ${primaryGreen}` }}>
-          <h4 style={{ color: darkGreen, margin: '0 0 10px 0' }}>Booking Policy</h4>
+          <h4 style={{ color: darkGreen, margin: '0 0 10px 0' }}>Clinic Policy</h4>
           <ul style={{ color: '#2d6a4f', fontSize: '14px', paddingLeft: '20px', margin: 0 }}>
-            <li>Cancellations require 24h notice.</li>
-            <li>Slots are booked in 30-minute intervals.</li>
-            <li>The clinic is closed on Sundays for maintenance.</li>
+            <li>24-hour cancellation notice required.</li>
+            <li>Please arrive 10 minutes before your slot.</li>
+            <li>Closed on Sundays for facility maintenance.</li>
           </ul>
         </div>
       </div>
 
       <div style={cardStyle}>
         <form onSubmit={handleBooking}>
-          <div style={{ marginBottom: '15px' }}>
-            <label style={labelStyle}>Select Date</label>
-            <input 
-              type="date" 
-              style={inputStyle} 
-              value={date}
-              onChange={handleDateChange} 
-              required 
-            />
-            {isClosed && <p style={{ color: '#e74c3c', fontSize: '13px', marginTop: '-15px', marginBottom: '15px' }}>⚠️ Clinic is closed on Sundays</p>}
-          </div>
+          <label style={labelStyle}>Select Date</label>
+          <input type="date" style={inputStyle} value={date} onChange={handleDateChange} required />
+          {isClosed && <p style={{ color: '#e74c3c', fontSize: '13px', marginTop: '-15px', marginBottom: '15px' }}>Clinic is closed on Sundays</p>}
 
-          <div style={{ marginBottom: '15px' }}>
-            <label style={labelStyle}>Select Time Slot</label>
-            <select 
-              style={inputStyle} 
-              value={time} 
-              onChange={(e) => setTime(e.target.value)} 
-              required
-              disabled={isClosed}
-            >
-              <option value="">-- Choose a Time --</option>
-              {timeSlots.map(slot => (
-                <option key={slot} value={slot}>{slot}</option>
-              ))}
-            </select>
-          </div>
+          <label style={labelStyle}>Select Time Slot</label>
+          <select style={inputStyle} value={time} onChange={(e) => setTime(e.target.value)} required disabled={isClosed}>
+            <option value="">-- Choose a Time --</option>
+            {timeSlots.map(slot => <option key={slot} value={slot}>{slot}</option>)}
+          </select>
 
-          <div style={{ marginBottom: '25px' }}>
-            <label style={labelStyle}>Service Type</label>
-            <select 
-              style={inputStyle} 
-              value={service} 
-              onChange={(e) => setService(e.target.value)}
-              disabled={isClosed}
-            >
-              <option value="General Consultation">General Consultation</option>
-              <option value="Physical Exam">Physical Exam</option>
-              <option value="Blood Work / Lab">Blood Work / Lab</option>
-              <option value="Pediatric Care">Pediatric Care</option>
-              <option value="Vaccination">Vaccination</option>
-            </select>
-          </div>
+          <label style={labelStyle}>Service Type</label>
+          <select style={inputStyle} value={service} onChange={(e) => setService(e.target.value)} disabled={isClosed}>
+            <option value="General Consultation">General Consultation</option>
+            <option value="Physical Exam">Physical Exam</option>
+            <option value="Blood Work / Lab">Blood Work / Lab</option>
+            <option value="Pediatric Care">Pediatric Care</option>
+            <option value="Vaccination">Vaccination</option>
+          </select>
 
           <button 
             type="submit" 
-            disabled={isClosed}
+            disabled={isClosed || loading}
             style={{ 
-              width: '100%', 
-              padding: '14px', 
-              backgroundColor: isClosed ? '#ccc' : primaryGreen, 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '8px', 
-              cursor: isClosed ? 'not-allowed' : 'pointer', 
-              fontWeight: 'bold', 
-              fontSize: '16px',
-              transition: '0.3s'
+              width: '100%', padding: '14px', 
+              backgroundColor: isClosed || loading ? '#ccc' : primaryGreen, 
+              color: 'white', border: 'none', borderRadius: '8px', 
+              cursor: isClosed || loading ? 'not-allowed' : 'pointer', 
+              fontWeight: 'bold', fontSize: '16px' 
             }}
           >
-            {isClosed ? 'Clinic Closed' : 'Confirm Appointment'}
+            {loading ? 'Processing...' : isClosed ? 'Clinic Closed' : 'Confirm Appointment'}
           </button>
         </form>
       </div>
