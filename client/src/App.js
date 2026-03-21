@@ -1,0 +1,79 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import Booking from './pages/Booking';
+import Navbar from './components/Navbar';
+import Home from './pages/Home';
+import Profile from './pages/Profile';
+import AdminDashboard from './pages/AdminDashboard';
+import Footer from './components/Footer';
+import Services from './pages/Services';
+import DoctorDashboard from './pages/DoctorDashboard';
+import ServiceDetail from './pages/ServiceDetail';
+
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const token = localStorage.getItem('token');
+  const userRole = localStorage.getItem('role');
+
+  if (!token) {
+    return <Navigate to="/login" />;
+  }
+
+  if (allowedRoles) {
+    const isAllowed = allowedRoles.some(role => role.toLowerCase() === userRole?.toLowerCase());
+    if (!isAllowed) return <Navigate to="/home" />;
+  }
+
+  return children;
+};
+
+function App() {
+  return (
+    <Router>
+      <Navbar />
+      <div style={{ minHeight: '85vh' }}> 
+        <Routes>
+          <Route path="/" element={<Home />} /> 
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/services" element={<Services />} />
+
+          <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+
+          <Route path="/dashboard" element={
+            <ProtectedRoute allowedRoles={['Patient', 'User']}>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/book" element={
+            <ProtectedRoute allowedRoles={['Patient', 'User']}>
+              <Booking />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin" element={
+            <ProtectedRoute allowedRoles={['Admin']}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/doctor-dashboard" element={
+            <ProtectedRoute allowedRoles={['Doctor', 'Staff']}>
+              <DoctorDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/services/:type" element={<ServiceDetail />} />
+
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </div>
+      <Footer /> 
+    </Router>
+  );
+}
+
+export default App;
