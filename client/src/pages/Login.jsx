@@ -58,6 +58,22 @@ const Login = () => {
           onChange={(e) => setEmail(e.target.value)} 
           required 
         />
+            <div style={{ marginTop: '15px', textAlign: 'center' }}>
+              <button 
+                type="button"
+                onClick={() => alert("Password reset link has been sent to your email (Demo Mode)")}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  color: '#27ae60', 
+                  cursor: 'pointer', 
+                  textDecoration: 'underline',
+                  fontSize: '14px' 
+                }}
+              >
+                Forgot Password?
+              </button>
+            </div>
         
         <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#1b4332' }}>Password</label>
         <input 
