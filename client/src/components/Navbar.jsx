@@ -9,10 +9,10 @@ const Navbar = () => {
   
   const [showDropdown, setShowDropdown] = useState(false);
   
-  // STRICT ROLE SEPARATION
+  // STRICT ROLE SEPARATION - Sachin (Patient) will only match isPatient
   const isAdmin = role === 'admin';
   const isDoctor = role === 'doctor';
-  const isPatient = role === 'patient' || role === 'user';
+  const isPatient = (role === 'patient' || role === 'user') && !isAdmin && !isDoctor;
 
   const handleLogout = () => {
     localStorage.clear();
@@ -46,20 +46,20 @@ const Navbar = () => {
           <>
             <Link style={linkStyle} to="/">Home</Link>
             
-            {/* PATIENT ONLY */}
-            {isPatient && !isAdmin && !isDoctor && (
+            {/* PATIENT (SACHIN) PANEL */}
+            {isPatient && (
               <>
                 <Link style={{ ...linkStyle, color: '#27ae60' }} to="/dashboard">My Health</Link>
                 <Link style={linkStyle} to="/appointments">Book Visit</Link>
               </>
             )}
 
-            {/* ADMIN ONLY */}
+            {/* ADMIN PANEL */}
             {isAdmin && (
               <Link style={{ ...linkStyle, color: '#f39c12' }} to="/admin">Admin Panel</Link>
             )}
 
-            {/* DOCTOR ONLY */}
+            {/* DOCTOR PANEL */}
             {isDoctor && (
               <Link style={{ ...linkStyle, color: '#3498db' }} to="/doctor-dashboard">Doctor Panel</Link>
             )}
@@ -77,4 +77,5 @@ const Navbar = () => {
     </nav>
   );
 };
+
 export default Navbar;
