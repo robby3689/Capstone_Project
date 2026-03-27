@@ -4,88 +4,57 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'evergreensecret123';
 
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
+    if (!name || !email || !password) return res.status(400).json({ msg: 'Please enter all fields' });
 
-    let user = await User.findOne({ email });
-    if (user) {
-      return res.status(400).json({ msg: 'Email is already registered' });
-    }
+    const cleanEmail = email.toLowerCase().trim();
+    let user = await User.findOne({ email: cleanEmail });
+    if (user) return res.status(400).json({ msg: 'Email is already registered' });
 
-    user = new User({
-      name,
-      email,
-      password,
-      role: role || 'patient' 
-    });
+    user = new User({ name, email: cleanEmail, password, role: role || 'patient' });
 
-    const salt = await bcrypt.getSalt(10);
+    const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(password, salt);
 
     await user.save();
 
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET || 'secretkey',
-      { expiresIn: '2h' }
-    );
+    const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '2h' });
 
     res.status(201).json({
       token,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role
-      }
+      user: { _id: user._id, name: user.name, email: user.email, role: user.role }
     });
-
   } catch (err) {
-    console.error("REGISTER ERROR:", err.message);
-    res.status(500).json({ msg: 'Registration failed on server', error: err.message });
+    console.error("DETAILED REGISTER ERROR:", err); 
+    res.status(500).json({ msg: 'Server error', error: err.message });
   }
 });
 
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    
-    if (!user) return res.status(400).json({ msg: 'User not found' });
+    if (!email || !password) return res.status(400).json({ msg: 'Please enter all fields' });
+
+    const cleanEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: cleanEmail });
+    if (!user) return res.status(400).json({ msg: 'Invalid Credentials' });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ msg: 'Incorrect password' });
+    if (!isMatch) return res.status(400).json({ msg: 'Invalid Credentials' });
 
-    const token = jwt.sign(
-      { id: user._id, role: user.role }, 
-      process.env.JWT_SECRET || 'secretkey', 
-      { expiresIn: '2h' }
-    );
+    const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '2h' });
 
     res.json({ 
       token, 
       user: { _id: user._id, name: user.name, role: user.role, email: user.email } 
     });
   } catch (err) {
+    console.error("DETAILED LOGIN ERROR:", err); 
     res.status(500).json({ msg: 'Login error' });
-  }
-});
-
-router.put('/profile/:id', async (req, res) => {
-  try {
-    const { name, phone, age, gender } = req.body;
-    const updatedUser = await User.findByIdAndUpdate(
-      req.params.id, 
-      { $set: { name, phone, age, gender } }, 
-      { new: true }
-    ).select('-password');
-
-    if (!updatedUser) return res.status(404).json({ msg: 'User not found' });
-    res.json(updatedUser);
-  } catch (err) {
-    res.status(500).json({ msg: 'Update failed' });
   }
 });
 

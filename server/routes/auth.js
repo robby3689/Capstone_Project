@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const User = require('../models/User'); 
 
 const JWT_SECRET = process.env.JWT_SECRET || 'evergreensecret123';
 
@@ -17,7 +17,7 @@ router.post('/register', async (req, res) => {
     const cleanEmail = email.toLowerCase().trim();
 
     let user = await User.findOne({ email: cleanEmail });
-    if (user) return res.status(400).json({ msg: 'User already exists' });
+    if (user) return res.status(400).json({ msg: 'Email is already registered' });
 
     user = new User({
       name,
@@ -32,27 +32,23 @@ router.post('/register', async (req, res) => {
     await user.save();
 
     const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '2h' });
-    
+
     res.status(201).json({
       token,
-      user: { _id: user._id, name: user.name, role: user.role }
+      user: { _id: user._id, name: user.name, email: user.email, role: user.role }
     });
   } catch (err) {
-    console.error("REGISTER ERROR:", err.message);
-    res.status(500).json({ msg: 'Server error during registration', error: err.message });
+    console.error("DETAILED REGISTER ERROR:", err); 
+    res.status(500).json({ msg: 'Server error', error: err.message });
   }
 });
 
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    
-    if (!email || !password) {
-      return res.status(400).json({ msg: 'Please enter all fields' });
-    }
+    if (!email || !password) return res.status(400).json({ msg: 'Please enter all fields' });
 
     const cleanEmail = email.toLowerCase().trim();
-
     const user = await User.findOne({ email: cleanEmail });
     if (!user) return res.status(400).json({ msg: 'Invalid Credentials' });
 
@@ -60,14 +56,14 @@ router.post('/login', async (req, res) => {
     if (!isMatch) return res.status(400).json({ msg: 'Invalid Credentials' });
 
     const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '2h' });
-    
-    res.json({
-      token,
-      user: { _id: user._id, name: user.name, role: user.role }
+
+    res.json({ 
+      token, 
+      user: { _id: user._id, name: user.name, role: user.role, email: user.email } 
     });
   } catch (err) {
-    console.error("LOGIN ERROR:", err.message);
-    res.status(500).json({ msg: 'Server error during login', error: err.message });
+    console.error("DETAILED LOGIN ERROR:", err); 
+    res.status(500).json({ msg: 'Login error' });
   }
 });
 
