@@ -21,8 +21,8 @@ const DoctorDashboard = () => {
 
   const fetchDoctorData = async () => {
     try {
-      const appntRes = await axios.get('http://localhost:5000/api/appointments/all', config);
-      const reportRes = await axios.get('http://localhost:5000/api/reports/all', config);
+      const appntRes = await axios.get('[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/appointments/all', config);
+      const reportRes = await axios.get('[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/reports/all', config);
       setAppointments(appntRes.data);
       setReports(reportRes.data);
     } catch (err) { console.error("Fetch failed", err); }
@@ -40,7 +40,7 @@ const DoctorDashboard = () => {
 
     setUploading(true);
     try {
-      await axios.post('http://localhost:5000/api/reports/upload', formData, {
+      await axios.post('[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/reports/upload', formData, {
         headers: { ...config.headers, 'Content-Type': 'multipart/form-data' }
       });
       alert("Upload Successful!");
@@ -53,7 +53,7 @@ const DoctorDashboard = () => {
   const deleteAppointment = async (id) => {
     if (window.confirm("Are you sure you want to delete this appointment?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/appointments/cancel/${id}`, config);
+        await axios.delete(`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/appointments/cancel/${id}`, config);
         setAppointments(appointments.filter(app => app._id !== id));
         alert("Appointment deleted.");
       } catch (err) { alert("Failed to delete appointment."); }
@@ -63,7 +63,7 @@ const DoctorDashboard = () => {
   const deleteReport = async (id) => {
     if (window.confirm("Delete this medical record permanently?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/reports/${id}`, config);
+        await axios.delete(`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/reports/${id}`, config);
         setReports(reports.filter(r => r._id !== id));
         alert("Report deleted.");
       } catch (err) { alert("Delete failed."); }
@@ -124,7 +124,7 @@ const DoctorDashboard = () => {
                 <td style={cellStyle}>{report.fileName}</td>
                 <td style={cellStyle}>{new Date(report.createdAt).toLocaleDateString()}</td>
                 <td style={cellStyle}>
-                  <a href={`http://localhost:5000/${report.filePath}`} target="_blank" rel="noreferrer" style={{ color: primaryGreen, marginRight: '15px', fontWeight: 'bold', textDecoration: 'none' }}>Download</a>
+                  <a href={`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/${report.filePath}`} target="_blank" rel="noreferrer" style={{ color: primaryGreen, marginRight: '15px', fontWeight: 'bold', textDecoration: 'none' }}>Download</a>
                   <button onClick={() => deleteReport(report._id)} style={{ color: dangerRed, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Delete</button>
                 </td>
               </tr>

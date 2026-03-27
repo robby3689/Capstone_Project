@@ -19,7 +19,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/auth/user/${userId}`, {
+        const res = await axios.get(`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/auth/user/${userId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setProfileData(res.data);
@@ -37,7 +37,7 @@ const Profile = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:5000/api/auth/profile/${userId}`, profileData, {
+      await axios.put(`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/auth/profile/${userId}`, profileData, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -56,7 +56,7 @@ const Profile = () => {
   const handleDeleteAccount = async () => {
     if (window.confirm("Are you sure? This will delete all your records.")) {
       try {
-        await axios.delete(`http://localhost:5000/api/auth/user/${userId}`, {
+        await axios.delete(`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/auth/user/${userId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         localStorage.clear();

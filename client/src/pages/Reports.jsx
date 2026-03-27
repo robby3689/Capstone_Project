@@ -10,7 +10,7 @@ const Reports = () => {
 
   const fetchReports = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/reports', {
+      const res = await axios.get('[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/reports', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setReports(res.data);

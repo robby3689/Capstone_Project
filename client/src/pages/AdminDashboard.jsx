@@ -24,8 +24,8 @@ const AdminDashboard = () => {
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
       
-      const userRes = await axios.get('http://localhost:5000/api/auth/all-users', config);
-      const appntRes = await axios.get('http://localhost:5000/api/appointments/all', config);
+      const userRes = await axios.get('[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/auth/all-users', config);
+      const appntRes = await axios.get('[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/appointments/all', config);
       
       setUsers(userRes.data);
       setAllAppointments(appntRes.data);
@@ -37,7 +37,7 @@ const AdminDashboard = () => {
   const handleAddUser = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/auth/register', newUser);
+      await axios.post('[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/auth/register', newUser);
       alert("User created successfully!");
       setShowAddModal(false);
       fetchAdminData();
@@ -47,7 +47,7 @@ const AdminDashboard = () => {
   const handleDeleteUser = async (id) => {
     if (window.confirm("Permanently remove this patient from the records?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/auth/user/${id}`);
+        await axios.delete(`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/auth/user/${id}`);
         setUsers(users.filter(u => u._id !== id));
       } catch (err) { alert("Delete failed"); }
     }
@@ -56,7 +56,7 @@ const AdminDashboard = () => {
   const handleDeleteAppointment = async (id) => {
     if (window.confirm("Cancel and delete this appointment?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/appointments/${id}`);
+        await axios.delete(`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/appointments/${id}`);
         setAllAppointments(allAppointments.filter(a => a._id !== id));
       } catch (err) { alert("Failed to delete appointment"); }
     }

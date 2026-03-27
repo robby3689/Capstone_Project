@@ -30,10 +30,10 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const appRes = await axios.get(`http://localhost:5000/api/appointments/user/${userId}`, config);
+      const appRes = await axios.get(`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/appointments/user/${userId}`, config);
       setAppointments(appRes.data);
       
-      const reportRes = await axios.get(`http://localhost:5000/api/reports/patient/${userId}`, config);
+      const reportRes = await axios.get(`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/reports/patient/${userId}`, config);
       setMyReports(reportRes.data);
     } catch (err) {
       console.log("Error fetching dashboard data");
@@ -42,7 +42,7 @@ const Dashboard = () => {
 
   const handleReschedule = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/appointments/reschedule/${id}`, editData, config);
+      await axios.put(`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/appointments/reschedule/${id}`, editData, config);
       setEditingId(null);
       fetchDashboardData(); 
       alert("Appointment rescheduled successfully!");
@@ -63,7 +63,7 @@ const Dashboard = () => {
 
     if (window.confirm("Are you sure you want to cancel?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/appointments/cancel/${appointmentId}`, config);
+        await axios.delete(`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/appointments/cancel/${appointmentId}`, config);
         setAppointments(appointments.filter(app => app._id !== appointmentId));
         alert("Appointment cancelled.");
       } catch (err) {
@@ -147,7 +147,7 @@ const Dashboard = () => {
           <div key={report._id} style={{ backgroundColor: 'white', padding: '25px', borderRadius: '12px', borderLeft: `6px solid ${primaryGreen}`, boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
             <h4 style={{ margin: '0 0 5px 0', color: darkGreen }}>{report.fileName}</h4>
             <p style={{ fontSize: '12px', color: '#666' }}>Uploaded by Dr. {report.doctorName}</p>
-            <a href={`http://localhost:5000/${report.filePath}`} target="_blank" rel="noreferrer" style={{ color: primaryGreen, fontWeight: 'bold', textDecoration: 'none', fontSize: '14px' }}>Download PDF</a>
+            <a href={`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/${report.filePath}`} target="_blank" rel="noreferrer" style={{ color: primaryGreen, fontWeight: 'bold', textDecoration: 'none', fontSize: '14px' }}>Download PDF</a>
           </div>
         )) : (
           <p style={{ color: '#888' }}>No medical records available yet.</p>

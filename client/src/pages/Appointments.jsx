@@ -9,7 +9,7 @@ const Appointments = () => {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/appointments/user/${userId}`);
+        const res = await axios.get(`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/appointments/user/${userId}`);
         setHistory(res.data);
       } catch (err) {
         console.log("Error loading history");
