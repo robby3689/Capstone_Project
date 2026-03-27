@@ -26,18 +26,23 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // FIX: Clean URLs
       const appRes = await axios.get(`https://evergreen-clinic-backend.onrender.com/api/appointments/user/${userId}`, config);
       setAppointments(Array.isArray(appRes.data) ? appRes.data : []);
       
-      const reportRes = await axios.get(`https://evergreen-clinic-backend.onrender.com/api/reports/patient/${userId}`, config);
-      setMyReports(Array.isArray(reportRes.data) ? reportRes.data : []);
+      try {
+        const reportRes = await axios.get(`https://evergreen-clinic-backend.onrender.com/api/reports/patient/${userId}`, config);
+        setMyReports(Array.isArray(reportRes.data) ? reportRes.data : []);
+      } catch (reportErr) {
+        console.log("Reports not found (404), which is fine for now.");
+        setMyReports([]);
+      }
+
     } catch (err) {
       console.error("Fetch Error:", err);
       setAppointments([]);
+      setMyReports([]);
     }
   };
-
   const handleReschedule = async (id) => {
     try {
       await axios.put(`https://evergreen-clinic-backend.onrender.com/api/appointments/reschedule/${id}`, editData, config);
