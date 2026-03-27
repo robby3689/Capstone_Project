@@ -13,105 +13,67 @@ const Home = () => {
   ];
 
   return (
-    <div style={{ minHeight: '85vh' }}>
+    <div style={{ minHeight: '85vh', fontFamily: 'Arial, sans-serif' }}>
+      {/* Hero Section */}
       <section
         style={{
           position: 'relative',
-          minHeight: '420px',
+          minHeight: '500px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           color: 'white',
           textAlign: 'center',
           padding: '60px 24px',
-          backgroundImage:
-            'linear-gradient(105deg, rgba(27, 67, 50, 0.92) 0%, rgba(39, 174, 96, 0.55) 100%), url(https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1920&q=80)',
+          backgroundImage: 'linear-gradient(105deg, rgba(27, 67, 50, 0.92) 0%, rgba(39, 174, 96, 0.55) 100%), url(https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1920&q=80)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
       >
-        <div style={{ maxWidth: '720px' }}>
-          <h1 style={{ fontSize: 'clamp(2rem, 4vw, 2.75rem)', margin: '0 0 16px', fontWeight: 800, lineHeight: 1.2 }}>
-            Evergreen Clinic
+        <div style={{ maxWidth: '800px' }}>
+          <h1 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', margin: '0 0 20px', fontWeight: 800, lineHeight: 1.1 }}>
+            Better Health Starts Here
           </h1>
-          <p style={{ fontSize: '1.15rem', opacity: 0.95, margin: '0 0 28px', lineHeight: 1.6 }}>
-            Compassionate healthcare in Highbury—where your family&apos;s health grows with you.
+          <p style={{ fontSize: '1.25rem', opacity: 0.95, margin: '0 0 35px', lineHeight: 1.6 }}>
+            Evergreen Clinic provides world-class healthcare with a local touch. 
+            From emergency response to long-term wellness, we are your partners in health.
           </p>
-          <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link
-              to="/register"
-              style={{
-                backgroundColor: primaryGreen,
-                color: 'white',
-                padding: '14px 28px',
-                borderRadius: '10px',
-                textDecoration: 'none',
-                fontWeight: 700,
-                fontSize: '16px',
-              }}
-            >
-              Join Us
-            </Link>
-            <Link
-              to="/login"
-              style={{
-                backgroundColor: 'white',
-                color: darkGreen,
-                padding: '14px 28px',
-                borderRadius: '10px',
-                textDecoration: 'none',
-                fontWeight: 700,
-                fontSize: '16px',
-              }}
-            >
-              Patient Login
-            </Link>
-            <Link
-              to="/services"
-              style={{
-                border: '2px solid white',
-                color: 'white',
-                padding: '12px 26px',
-                borderRadius: '10px',
-                textDecoration: 'none',
-                fontWeight: 600,
-                fontSize: '16px',
-              }}
-            >
-              Our Services
-            </Link>
+          <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link to="/register" style={{ backgroundColor: primaryGreen, color: 'white', padding: '16px 32px', borderRadius: '30px', textDecoration: 'none', fontWeight: 700 }}>Start Your Journey</Link>
+            <Link to="/services" style={{ border: '2px solid white', color: 'white', padding: '14px 30px', borderRadius: '30px', textDecoration: 'none', fontWeight: 600 }}>Explore Services</Link>
           </div>
         </div>
       </section>
 
-      <section style={{ backgroundColor: '#f8fbfc', padding: '72px 20px' }}>
+      {/* NEW: Long Info Section */}
+      <section style={{ padding: '80px 20px', backgroundColor: 'white' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '50px', alignItems: 'center' }}>
+          <div>
+            <h2 style={{ color: darkGreen, fontSize: '32px', marginBottom: '20px' }}>Leading the Way in Modern Medicine</h2>
+            <p style={{ lineHeight: '1.8', color: '#444', fontSize: '17px' }}>
+              Evergreen Clinic has been serving the community for over two decades. We believe that technology should enhance the human touch, not replace it. Our facility integrates digital health records with face-to-face expertise.
+            </p>
+            <ul style={{ listStyle: 'none', padding: 0, marginTop: '20px' }}>
+              {['✓ 24/7 Virtual Consultation', '✓ Advanced Imaging Suite', '✓ On-site Pharmacy'].map(item => (
+                <li key={item} style={{ marginBottom: '10px', color: primaryGreen, fontWeight: 'bold' }}>{item}</li>
+              ))}
+            </ul>
+          </div>
+          <div style={{ borderRadius: '20px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
+            <img src="https://images.unsplash.com/photo-1586773860418-d37222d8fce2?auto=format&fit=crop&w=800&q=80" alt="Clinic" style={{ width: '100%', display: 'block' }} />
+          </div>
+        </div>
+      </section>
+
+      {/* Medical Pillars */}
+      <section style={{ backgroundColor: '#f8fbfc', padding: '80px 20px' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <h2 style={{ color: darkGreen, textAlign: 'center', fontSize: 'clamp(1.5rem, 3vw, 2rem)', marginBottom: '12px' }}>
-            Our medical pillars
-          </h2>
-          <p style={{ color: '#52796f', textAlign: 'center', maxWidth: '640px', margin: '0 auto 48px', fontSize: '17px', lineHeight: 1.6 }}>
-            These principles shape how we care for every patient who walks through our doors.
-          </p>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-              gap: '24px',
-            }}
-          >
+          <h2 style={{ color: darkGreen, textAlign: 'center', marginBottom: '50px' }}>Our Commitment to You</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '25px' }}>
             {pillars.map((p) => (
-              <div
-                key={p.title}
-                style={{
-                  backgroundColor: 'white',
-                  borderRadius: '14px',
-                  padding: '28px 24px',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
-                  borderTop: `4px solid ${primaryGreen}`,
-                }}
-              >
-                <h3 style={{ color: darkGreen, margin: '0 0 12px', fontSize: '1.15rem' }}>{p.title}</h3>
-                <p style={{ color: '#555', margin: 0, lineHeight: 1.65, fontSize: '15px' }}>{p.text}</p>
+              <div key={p.title} style={{ backgroundColor: 'white', borderRadius: '15px', padding: '30px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', borderTop: `5px solid ${primaryGreen}` }}>
+                <h3 style={{ color: darkGreen, marginBottom: '15px' }}>{p.title}</h3>
+                <p style={{ color: '#666', lineHeight: 1.6 }}>{p.text}</p>
               </div>
             ))}
           </div>
