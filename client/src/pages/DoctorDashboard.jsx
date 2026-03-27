@@ -28,6 +28,16 @@ const DoctorDashboard = () => {
 
   useEffect(() => { fetchDoctorData(); }, [fetchDoctorData]);
 
+  // HELPER: Professional 5-digit ID
+  const getShortId = (longId) => {
+    if(!longId) return "74563";
+    let hash = 0;
+    for (let i = 0; i < longId.length; i++) {
+      hash = longId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return Math.abs(hash % 90000) + 10000; 
+  };
+
   const handleUpload = async (userId) => {
     if (!selectedFile) return alert('Select a PDF file');
     const formData = new FormData();
@@ -48,17 +58,19 @@ const DoctorDashboard = () => {
   };
 
   const getReportUrl = (r) => {
-    const path = String(r?.filePath ?? '');
+    const filePath = r?.filePath ?? '';
+    // Extract filename only to prevent path errors
+    const fileName = filePath.split(/[/\\]/).pop(); 
     const base = API_BASE_URL.replace('/api', '');
-    return `${base}/${path.replace(/\\/g, '/')}`;
+    return `${base}/uploads/${fileName}`;
   };
 
   return (
     <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
       <h2>Doctor Portal: Dr. {name}</h2>
       <div style={{ display: 'flex', gap: '10px', margin: '20px 0' }}>
-        <button onClick={() => setActiveTab('appointments')} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: activeTab === 'appointments' ? '#1b4332' : '#eee', color: activeTab === 'appointments' ? 'white' : '#333' }}>Appointments</button>
-        <button onClick={() => setActiveTab('prescriptions')} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: activeTab === 'prescriptions' ? '#1b4332' : '#eee', color: activeTab === 'prescriptions' ? 'white' : '#333' }}>History</button>
+        <button onClick={() => setActiveTab('appointments')} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: activeTab === 'appointments' ? '#1b4332' : '#eee', color: activeTab === 'appointments' ? 'white' : '#333', cursor:'pointer' }}>Appointments</button>
+        <button onClick={() => setActiveTab('prescriptions')} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: activeTab === 'prescriptions' ? '#1b4332' : '#eee', color: activeTab === 'prescriptions' ? 'white' : '#333', cursor:'pointer' }}>History</button>
       </div>
 
       <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
@@ -71,10 +83,10 @@ const DoctorDashboard = () => {
               {appointments.map((app) => (
                 <tr key={app._id} style={{ borderBottom: '1px solid #eee' }}>
                   <td style={{ padding: '15px' }}>{app?.userId?.name || 'Patient'}</td>
-                  <td style={{ padding: '15px' }}><code>{app?.userId?._id}</code></td>
+                  <td style={{ padding: '15px' }}><code>#{getShortId(app?.userId?._id)}</code></td>
                   <td style={{ padding: '15px' }}>
                     <input type="file" accept=".pdf" onChange={(e) => setSelectedFile(e.target.files[0])} />
-                    <button onClick={() => handleUpload(app?.userId?._id)} style={{ backgroundColor: '#27ae60', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px' }}>
+                    <button onClick={() => handleUpload(app?.userId?._id)} style={{ backgroundColor: '#27ae60', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>
                       {uploadingId === app?.userId?._id ? "Uploading..." : "Upload PDF"}
                     </button>
                   </td>
@@ -91,7 +103,7 @@ const DoctorDashboard = () => {
               {reports.map((r) => (
                 <tr key={r._id} style={{ borderBottom: '1px solid #eee' }}>
                   <td style={{ padding: '15px' }}>{r.fileName}</td>
-                  <td style={{ padding: '15px' }}><code>{r.patientId}</code></td>
+                  <td style={{ padding: '15px' }}><code>#{getShortId(r.patientId)}</code></td>
                   <td style={{ padding: '15px' }}><a href={getReportUrl(r)} target="_blank" rel="noreferrer" style={{color:'#27ae60', fontWeight:'bold'}}>View PDF</a></td>
                 </tr>
               ))}

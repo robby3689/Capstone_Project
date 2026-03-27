@@ -1,101 +1,98 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import API from '../api';
+import { API_BASE_URL } from '../api';
 
-const AdminDashboard = () => {
-  const [searchParams] = useSearchParams();
-  const [users, setUsers] = useState([]);
-  const [allAppointments, setAllAppointments] = useState([]);
-  const [tab, setTab] = useState(searchParams.get('tab') || 'users');
-  const [searchTerm, setSearchTerm] = useState('');
+const Dashboard = () => {
+  const [appointments, setAppointments] = useState([]);
+  const [myReports, setMyReports] = useState([]);
+  const userId = localStorage.getItem('userId');
+  const userName = localStorage.getItem('name');
+  const token = localStorage.getItem('token');
 
-  const darkGreen = '#1b4332';
-  const primaryGreen = '#27ae60';
-  const dangerRed = '#e74c3c';
-
-  const fetchClinicData = useCallback(async () => {
+  const fetchDashboardData = useCallback(async () => {
+    if (!userId || !token) return;
+    const config = { headers: { Authorization: `Bearer ${token}` } };
     try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const [userRes, appntRes] = await Promise.all([
-        API.get('/auth/all-users', config),
-        API.get('/appointments/all', config)
-      ]);
-      setUsers(Array.isArray(userRes.data) ? userRes.data : []);
-      setAllAppointments(Array.isArray(appntRes.data) ? appntRes.data : []);
-    } catch (err) { console.error("Sync Error:", err); }
-  }, []);
+      const appRes = await API.get(`/appointments/user/${userId}`, config);
+      setAppointments(Array.isArray(appRes.data) ? appRes.data : []);
+      
+      const reportRes = await API.get(`/reports/patient/${userId}`, config);
+      setMyReports(Array.isArray(reportRes.data) ? reportRes.data : []);
+    } catch (err) { console.error('Fetch Error:', err); }
+  }, [userId, token]);
 
-  useEffect(() => { fetchClinicData(); }, [fetchClinicData]);
+  useEffect(() => { fetchDashboardData(); }, [fetchDashboardData]);
 
-  // HELPER: Generate a 5-digit number based on the MongoID string
+  // HELPER: Professional 5-digit ID
   const getShortId = (longId) => {
-     if(!longId) return "74563"; // Fallback
-     let hash = 0;
-     for (let i = 0; i < longId.length; i++) {
-        hash = longId.charCodeAt(i) + ((hash << 5) - hash);
-     }
-     return Math.abs(hash % 90000) + 10000; 
+    if(!longId) return "74563";
+    let hash = 0;
+    for (let i = 0; i < longId.length; i++) {
+      hash = longId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return Math.abs(hash % 90000) + 10000; 
   };
 
-  const handleCancelAppointment = async (id) => {
-    if (!window.confirm("Cancel this appointment?")) return;
+  const handlePatientCancel = async (id) => {
+    if (!window.confirm("Cancel your appointment?")) return;
     try {
-      const token = localStorage.getItem('token');
       await API.put(`/appointments/status/${id}`, { status: 'Cancelled' }, { headers: { Authorization: `Bearer ${token}` } });
-      fetchClinicData();
-    } catch (err) { alert("Cancellation failed"); }
+      fetchDashboardData();
+    } catch (err) { alert("Failed to cancel."); }
   };
 
-  const tableHeaderStyle = { backgroundColor: '#f8f9fa', color: darkGreen, padding: '15px', textAlign: 'left', borderBottom: '2px solid #dee2e6' };
-  const cellStyle = { padding: '15px', borderBottom: '1px solid #eee' };
+  const getReportDownloadUrl = (report) => {
+    const filePath = report?.filePath ?? '';
+    const fileName = filePath.split(/[/\\]/).pop(); 
+    const base = API_BASE_URL.replace('/api', '');
+    return `${base}/uploads/${fileName}`;
+  };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 20px' }}>
-      <h1 style={{ color: darkGreen }}>Clinic Master Schedule</h1>
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '25px' }}>
-        <button onClick={() => setTab('users')} style={{ padding: '10px 20px', backgroundColor: tab === 'users' ? darkGreen : '#eee', color: tab === 'users' ? 'white' : '#333', border: 'none', borderRadius: '6px' }}>Users ({users.length})</button>
-        <button onClick={() => setTab('appointments')} style={{ padding: '10px 20px', backgroundColor: tab === 'appointments' ? darkGreen : '#eee', color: tab === 'appointments' ? 'white' : '#333', border: 'none', borderRadius: '6px' }}>Appointments ({allAppointments.length})</button>
+    <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '20px' }}>
+      <div style={{ backgroundColor: '#1b4332', color: 'white', padding: '35px', borderRadius: '15px', marginBottom: '30px' }}>
+        <h2 style={{ margin: 0 }}>Welcome Back, {userName}</h2>
+        <p style={{ marginTop: '10px' }}>Your Official ID: <code>#{getShortId(userId)}</code></p>
       </div>
 
-      <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-        {tab === 'users' ? (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr><th style={tableHeaderStyle}>Name</th><th style={tableHeaderStyle}>User ID</th><th style={tableHeaderStyle}>Role</th></tr>
-            </thead>
-            <tbody>
-              {users.map(user => (
-                <tr key={user._id}>
-                  <td style={cellStyle}><strong>{user.name}</strong><br/><small>{user.email}</small></td>
-                  <td style={cellStyle}><code>#{getShortId(user._id)}</code></td>
-                  <td style={cellStyle}><span style={{textTransform:'uppercase', fontWeight:'bold', fontSize:'11px'}}>{user.role}</span></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr><th style={tableHeaderStyle}>Patient Name</th><th style={tableHeaderStyle}>User ID</th><th style={tableHeaderStyle}>Schedule</th><th style={tableHeaderStyle}>Status</th><th style={tableHeaderStyle}>Action</th></tr>
-            </thead>
-            <tbody>
-              {allAppointments.map(app => (
-                <tr key={app._id}>
-                  <td style={cellStyle}>{app.userId?.name || "Patient"}</td>
-                  <td style={cellStyle}><code>#{getShortId(app.userId?._id)}</code></td>
-                  <td style={cellStyle}>{app.date} at {app.time}</td>
-                  <td style={cellStyle}><span style={{color: app.status === 'Cancelled' ? dangerRed : primaryGreen, fontWeight: 'bold'}}>{app.status || 'Active'}</span></td>
-                  <td style={cellStyle}>
-                    {app.status !== 'Cancelled' && <button onClick={() => handleCancelAppointment(app._id)} style={{ color: dangerRed, border: 'none', background: 'none', cursor: 'pointer' }}>Cancel</button>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+      <div style={{ marginBottom: '50px' }}>
+        <h3>My Scheduled Visits</h3>
+        <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', marginTop: '15px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+          <thead>
+            <tr style={{ backgroundColor: '#f1f8f5' }}>
+              <th style={{ padding: '15px', textAlign: 'left' }}>Service</th>
+              <th style={{ padding: '15px', textAlign: 'left' }}>Date & Time</th>
+              <th style={{ padding: '15px', textAlign: 'left' }}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {appointments.map((app) => (
+              <tr key={app._id} style={{ borderBottom: '1px solid #eee' }}>
+                <td style={{ padding: '15px', fontWeight: 'bold' }}>{app.service}</td>
+                <td style={{ padding: '15px' }}>{app.date} at {app.time}</td>
+                <td style={{ padding: '15px' }}>
+                  {app.status === 'Cancelled' ? <span style={{color:'red', fontWeight:'bold'}}>Cancelled</span> : (
+                     <button onClick={() => handlePatientCancel(app._id)} style={{ color: 'red', border: '1px solid red', padding: '6px 12px', background: 'none', cursor: 'pointer', borderRadius: '4px' }}>Cancel Visit</button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div>
+        <h3>My Prescriptions</h3>
+        <div style={{ display: 'grid', gap: '15px', marginTop: '20px' }}>
+          {myReports.length > 0 ? myReports.map((r) => (
+            <div key={r._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'white', padding: '20px', borderRadius: '10px', border: '1px solid #eee', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+              <div><strong>Prescription from {r.doctorName}</strong></div>
+              <a href={getReportDownloadUrl(r)} target="_blank" rel="noreferrer" style={{ backgroundColor: '#27ae60', color: 'white', padding: '10px 20px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold' }}>VIEW PDF</a>
+            </div>
+          )) : <p style={{color:'#999'}}>No prescriptions available yet.</p>}
+        </div>
       </div>
     </div>
   );
 };
-export default AdminDashboard;
+export default Dashboard;

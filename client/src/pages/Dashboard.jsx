@@ -23,6 +23,16 @@ const Dashboard = () => {
 
   useEffect(() => { fetchDashboardData(); }, [fetchDashboardData]);
 
+  // HELPER: Professional 5-digit ID
+  const getShortId = (longId) => {
+    if(!longId) return "74563";
+    let hash = 0;
+    for (let i = 0; i < longId.length; i++) {
+      hash = longId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return Math.abs(hash % 90000) + 10000; 
+  };
+
   const handlePatientCancel = async (id) => {
     if (!window.confirm("Cancel your appointment?")) return;
     try {
@@ -33,26 +43,25 @@ const Dashboard = () => {
 
   const getReportDownloadUrl = (report) => {
     const filePath = report?.filePath ?? '';
+    const fileName = filePath.split(/[/\\]/).pop(); 
     const base = API_BASE_URL.replace('/api', '');
-    // Ensure we remove 'public/' if it exists in path for local download
-    const cleanPath = filePath.replace('public/', '').replace(/\\/g, '/');
-    return `${base}/${cleanPath}`;
+    return `${base}/uploads/${fileName}`;
   };
 
   return (
     <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '20px' }}>
       <div style={{ backgroundColor: '#1b4332', color: 'white', padding: '35px', borderRadius: '15px', marginBottom: '30px' }}>
         <h2 style={{ margin: 0 }}>Welcome Back, {userName}</h2>
-        <p style={{ marginTop: '10px' }}>Your Official ID: <code>#{userId?.slice(-5).toUpperCase() || "74563"}</code></p>
+        <p style={{ marginTop: '10px' }}>Your Official ID: <code>#{getShortId(userId)}</code></p>
       </div>
 
       <div style={{ marginBottom: '50px' }}>
         <h3>My Scheduled Visits</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', marginTop: '15px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', marginTop: '15px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
           <thead>
             <tr style={{ backgroundColor: '#f1f8f5' }}>
               <th style={{ padding: '15px', textAlign: 'left' }}>Service</th>
-              <th style={{ padding: '15px', textAlign: 'left' }}>Date</th>
+              <th style={{ padding: '15px', textAlign: 'left' }}>Date & Time</th>
               <th style={{ padding: '15px', textAlign: 'left' }}>Action</th>
             </tr>
           </thead>
@@ -62,8 +71,8 @@ const Dashboard = () => {
                 <td style={{ padding: '15px', fontWeight: 'bold' }}>{app.service}</td>
                 <td style={{ padding: '15px' }}>{app.date} at {app.time}</td>
                 <td style={{ padding: '15px' }}>
-                  {app.status === 'Cancelled' ? <span style={{color:'red'}}>Cancelled</span> : (
-                     <button onClick={() => handlePatientCancel(app._id)} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>Cancel Visit</button>
+                  {app.status === 'Cancelled' ? <span style={{color:'red', fontWeight:'bold'}}>Cancelled</span> : (
+                     <button onClick={() => handlePatientCancel(app._id)} style={{ color: 'red', border: '1px solid red', padding: '6px 12px', background: 'none', cursor: 'pointer', borderRadius: '4px' }}>Cancel Visit</button>
                   )}
                 </td>
               </tr>
@@ -75,12 +84,12 @@ const Dashboard = () => {
       <div>
         <h3>My Prescriptions</h3>
         <div style={{ display: 'grid', gap: '15px', marginTop: '20px' }}>
-          {myReports.map((r) => (
-            <div key={r._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'white', padding: '20px', borderRadius: '10px', border: '1px solid #eee' }}>
+          {myReports.length > 0 ? myReports.map((r) => (
+            <div key={r._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'white', padding: '20px', borderRadius: '10px', border: '1px solid #eee', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
               <div><strong>Prescription from {r.doctorName}</strong></div>
-              <a href={getReportDownloadUrl(r)} target="_blank" rel="noreferrer" style={{ backgroundColor: '#27ae60', color: 'white', padding: '10px 20px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold' }}>DOWNLOAD PDF</a>
+              <a href={getReportDownloadUrl(r)} target="_blank" rel="noreferrer" style={{ backgroundColor: '#27ae60', color: 'white', padding: '10px 20px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold' }}>VIEW PDF</a>
             </div>
-          ))}
+          )) : <p style={{color:'#999'}}>No prescriptions available yet.</p>}
         </div>
       </div>
     </div>
