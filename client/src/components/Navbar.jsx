@@ -4,9 +4,14 @@ import { Link, useNavigate } from 'react-router-dom';
 const Navbar = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
-  const role = (localStorage.getItem('role') || '').toLowerCase();
+  
+  // CRITICAL: Clean up role string for comparison
+  const rawRole = localStorage.getItem('role') || '';
+  const role = rawRole.toLowerCase().trim();
+  
   const [showDropdown, setShowDropdown] = useState(false);
   
+  // Precise boolean flags
   const isPatient = role === 'patient' || role === 'user';
   const isDoctor = role === 'doctor';
   const isAdmin = role === 'admin';
@@ -27,7 +32,6 @@ const Navbar = () => {
       </Link>
 
       <div style={{ display: 'flex', alignItems: 'center' }}>
-        {/* EMERGENCY BUTTON RESTORED */}
         <a href="tel:911" style={emergencyBtn}>EMERGENCY 24/7</a>
 
         <div style={{ position: 'relative', marginLeft: '25px' }} onMouseEnter={() => setShowDropdown(true)} onMouseLeave={() => setShowDropdown(false)}>
@@ -44,11 +48,13 @@ const Navbar = () => {
         {token ? (
           <>
             <Link style={linkStyle} to="/">Home</Link>
-            {isPatient && <Link style={{ ...linkStyle, color: '#27ae60' }} to="/dashboard">My Health</Link>}
-            {isAdmin && <Link style={{ ...linkStyle, color: '#f39c12' }} to="/admin">Admin Panel</Link>}
-            {isDoctor && <Link style={{ ...linkStyle, color: '#3498db' }} to="/doctor-dashboard">Doctor Panel</Link>}
+            {/* ROLE-BASED LINKS */}
+            {isPatient && <Link style={{ ...linkStyle, color: '#27ae60', fontWeight: 'bold' }} to="/dashboard">My Health</Link>}
+            {isAdmin && <Link style={{ ...linkStyle, color: '#f39c12', fontWeight: 'bold' }} to="/admin">Admin Panel</Link>}
+            {isDoctor && <Link style={{ ...linkStyle, color: '#3498db', fontWeight: 'bold' }} to="/doctor-dashboard">Doctor Panel</Link>}
+            
             <Link style={linkStyle} to="/profile">Profile</Link>
-            <button onClick={handleLogout} style={{ marginLeft: '25px', padding: '8px 18px', color: '#e74c3c', border: '1px solid #e74c3c', borderRadius: '6px', background: 'none', cursor: 'pointer' }}>Logout</button>
+            <button onClick={handleLogout} style={{ marginLeft: '25px', padding: '8px 18px', color: '#e74c3c', border: '1px solid #e74c3c', borderRadius: '6px', background: 'none', cursor: 'pointer', fontWeight: '600' }}>Logout</button>
           </>
         ) : (
           <>

@@ -21,6 +21,7 @@ const DoctorDashboard = () => {
         API.get('/appointments/all', config),
         API.get('/reports/all', config),
       ]);
+      // Explicitly check for array data
       setAppointments(Array.isArray(appntRes.data) ? appntRes.data : []);
       setReports(Array.isArray(reportRes.data) ? reportRes.data : []);
     } catch (err) { console.error('Fetch failed', err); }
@@ -28,7 +29,6 @@ const DoctorDashboard = () => {
 
   useEffect(() => { fetchDoctorData(); }, [fetchDoctorData]);
 
-  // HELPER: Professional 5-digit ID
   const getShortId = (longId) => {
     if(!longId) return "74563";
     let hash = 0;
@@ -59,7 +59,6 @@ const DoctorDashboard = () => {
 
   const getReportUrl = (r) => {
     const filePath = r?.filePath ?? '';
-    // Extract filename only to prevent path errors
     const fileName = filePath.split(/[/\\]/).pop(); 
     const base = API_BASE_URL.replace('/api', '');
     return `${base}/uploads/${fileName}`;
@@ -77,10 +76,10 @@ const DoctorDashboard = () => {
         {activeTab === 'appointments' ? (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ backgroundColor: '#f1f8f5' }}><th style={{ padding: '15px', textAlign: 'left' }}>Patient Name</th><th style={{ padding: '15px', textAlign: 'left' }}>User ID</th><th style={{ padding: '15px', textAlign: 'left' }}>Upload Prescription</th></tr>
+              <tr style={{ backgroundColor: '#f1f8f5' }}><th style={{ padding: '15px', textAlign: 'left' }}>Patient Name</th><th style={{ padding: '15px', textAlign: 'left' }}>User ID</th><th style={{ padding: '15px', textAlign: 'left' }}>Action</th></tr>
             </thead>
             <tbody>
-              {appointments.map((app) => (
+              {appointments.length > 0 ? appointments.map((app) => (
                 <tr key={app._id} style={{ borderBottom: '1px solid #eee' }}>
                   <td style={{ padding: '15px' }}>{app?.userId?.name || 'Patient'}</td>
                   <td style={{ padding: '15px' }}><code>#{getShortId(app?.userId?._id)}</code></td>
@@ -91,7 +90,9 @@ const DoctorDashboard = () => {
                     </button>
                   </td>
                 </tr>
-              ))}
+              )) : (
+                <tr><td colSpan="3" style={{padding:'40px', textAlign:'center', color:'#999'}}>No active appointments found.</td></tr>
+              )}
             </tbody>
           </table>
         ) : (
