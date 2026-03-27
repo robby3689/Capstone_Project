@@ -6,6 +6,9 @@ const Navbar = () => {
   const token = localStorage.getItem('token');
   const role = (localStorage.getItem('role') || '').toLowerCase();
   const [showDropdown, setShowDropdown] = useState(false);
+  const isPatient = role === 'patient' || role === 'user';
+  const isDoctor = role === 'doctor' || role === 'staff';
+  const isAdmin = role === 'admin';
 
   const handleLogout = () => {
     localStorage.clear();
@@ -111,34 +114,54 @@ const Navbar = () => {
 
         {token ? (
           <>
-            {role === 'admin' && (
-              <Link
-                style={{ ...linkStyle, color: '#f39c12', fontWeight: 'bold' }}
-                to="/admin"
-              >
-                Admin Panel
-              </Link>
-            )}
+            <Link style={linkStyle} to="/">
+              Home
+            </Link>
 
-            {(role === 'doctor' || role === 'staff') && (
-              <Link
-                style={{ ...linkStyle, color: '#3498db', fontWeight: 'bold' }}
-                to="/doctor-dashboard"
-              >
-                Doctor Panel
-              </Link>
-            )}
-
-            {(role === 'patient' || role === 'user') && (
+            {isPatient && (
               <>
-                <Link
-                  style={{ ...linkStyle, color: '#27ae60', fontWeight: 'bold' }}
-                  to="/dashboard"
-                >
-                  My Health
+                <Link style={{ ...linkStyle, color: '#27ae60', fontWeight: 'bold' }} to="/dashboard">
+                  My Health Info
                 </Link>
-                <Link style={linkStyle} to="/book">
-                  Book Appointment
+                <Link style={linkStyle} to="/appointments">
+                  Appointments
+                </Link>
+                <Link style={linkStyle} to="/profile">
+                  Profile
+                </Link>
+              </>
+            )}
+
+            {isAdmin && (
+              <>
+                <Link style={{ ...linkStyle, color: '#f39c12', fontWeight: 'bold' }} to="/admin">
+                  Admin Dashboard
+                </Link>
+                <Link style={linkStyle} to="/admin">
+                  Users
+                </Link>
+                <Link style={linkStyle} to="/admin">
+                  Appointments
+                </Link>
+                <Link style={linkStyle} to="/admin">
+                  Prescriptions
+                </Link>
+              </>
+            )}
+
+            {isDoctor && (
+              <>
+                <Link style={{ ...linkStyle, color: '#3498db', fontWeight: 'bold' }} to="/doctor-dashboard">
+                  Doctor Dashboard
+                </Link>
+                <Link style={linkStyle} to="/doctor-dashboard">
+                  Appointments
+                </Link>
+                <Link style={linkStyle} to="/doctor-dashboard">
+                  Prescriptions
+                </Link>
+                <Link style={linkStyle} to="/profile">
+                  Profile
                 </Link>
               </>
             )}

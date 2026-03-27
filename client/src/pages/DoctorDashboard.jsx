@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import API from '../api';
+import { API_BASE_URL } from '../api';
 
 const DoctorDashboard = () => {
   const [appointments, setAppointments] = useState([]);
   const [reports, setReports] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState('appointments');
 
   const name = localStorage.getItem('name');
   const token = localStorage.getItem('token');
@@ -76,6 +78,23 @@ const DoctorDashboard = () => {
   };
 
   const safeApps = Array.isArray(appointments) ? appointments : [];
+  const safeReports = Array.isArray(reports) ? reports : [];
+
+  const getReportUrl = (r) => {
+    const path = String(r?.filePath ?? '');
+    if (path.startsWith('http')) return path;
+    return `${API_BASE_URL.replace('/api', '')}/${path.replace(/\\/g, '/')}`;
+  };
+
+  const handleDeleteReport = async (id) => {
+    if (!window.confirm('Delete this report?')) return;
+    try {
+      await API.delete(`/reports/${id}`);
+      setReports((prev) => (Array.isArray(prev) ? prev.filter((r) => r?._id !== id) : []));
+    } catch {
+      alert('Failed to delete report.');
+    }
+  };
 
   return (
     <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
@@ -85,6 +104,22 @@ const DoctorDashboard = () => {
       <p style={{ color: '#52796f', marginBottom: '20px' }}>
         Reports on file: {Array.isArray(reports) ? reports.length : 0}
       </p>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
+        <button
+          type="button"
+          onClick={() => setActiveTab('appointments')}
+          style={{ border: 'none', borderRadius: '8px', padding: '10px 14px', backgroundColor: activeTab === 'appointments' ? darkGreen : '#e8ecef', color: activeTab === 'appointments' ? 'white' : '#333' }}
+        >
+          Appointments
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('prescriptions')}
+          style={{ border: 'none', borderRadius: '8px', padding: '10px 14px', backgroundColor: activeTab === 'prescriptions' ? darkGreen : '#e8ecef', color: activeTab === 'prescriptions' ? 'white' : '#333' }}
+        >
+          Prescriptions
+        </button>
+      </div>
       <div
         style={{
           backgroundColor: 'white',
@@ -93,53 +128,94 @@ const DoctorDashboard = () => {
           overflow: 'hidden',
         }}
       >
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f1f8f5' }}>
-              <th style={{ padding: '15px', textAlign: 'left' }}>Patient Name</th>
-              <th style={{ padding: '15px', textAlign: 'left' }}>Service</th>
-              <th style={{ padding: '15px', textAlign: 'left' }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {safeApps.length > 0 ? (
-              safeApps.map((app) => (
-                <tr key={app?._id ?? app?.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '15px' }}>{app?.userId?.name ?? 'Patient'}</td>
-                  <td style={{ padding: '15px' }}>{app?.service ?? '—'}</td>
-                  <td style={{ padding: '15px' }}>
-                    <input
-                      type="file"
-                      accept=".pdf"
-                      onChange={(e) => setSelectedFile(e?.target?.files?.[0] ?? null)}
-                    />
-                    <button
-                      type="button"
-                      disabled={uploading}
-                      onClick={() => handleUpload(app)}
-                      style={{ backgroundColor: primaryGreen, color: 'white', padding: '5px' }}
-                    >
-                      Upload
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => deleteAppointment(app?._id ?? app?.id)}
-                      style={{ color: dangerRed, marginLeft: '10px', background: 'none', border: 'none', cursor: 'pointer' }}
-                    >
-                      Cancel
-                    </button>
+        {activeTab === 'appointments' ? (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f1f8f5' }}>
+                <th style={{ padding: '15px', textAlign: 'left' }}>Patient Name</th>
+                <th style={{ padding: '15px', textAlign: 'left' }}>Service</th>
+                <th style={{ padding: '15px', textAlign: 'left' }}>Date</th>
+                <th style={{ padding: '15px', textAlign: 'left' }}>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {safeApps.length > 0 ? (
+                safeApps.map((app) => (
+                  <tr key={app?._id ?? app?.id} style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '15px' }}>{app?.userId?.name ?? 'Patient'}</td>
+                    <td style={{ padding: '15px' }}>{app?.service ?? '—'}</td>
+                    <td style={{ padding: '15px' }}>{app?.date ?? '—'} {app?.time ?? ''}</td>
+                    <td style={{ padding: '15px' }}>
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e) => setSelectedFile(e?.target?.files?.[0] ?? null)}
+                      />
+                      <button
+                        type="button"
+                        disabled={uploading}
+                        onClick={() => handleUpload(app)}
+                        style={{ backgroundColor: primaryGreen, color: 'white', padding: '5px' }}
+                      >
+                        Upload
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteAppointment(app?._id ?? app?.id)}
+                        style={{ color: dangerRed, marginLeft: '10px', background: 'none', border: 'none', cursor: 'pointer' }}
+                      >
+                        Cancel
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4} style={{ padding: '24px', textAlign: 'center', color: '#666' }}>
+                    No appointments scheduled.
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={3} style={{ padding: '24px', textAlign: 'center', color: '#666' }}>
-                  No appointments scheduled.
-                </td>
+              )}
+            </tbody>
+          </table>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f1f8f5' }}>
+                <th style={{ padding: '15px', textAlign: 'left' }}>File</th>
+                <th style={{ padding: '15px', textAlign: 'left' }}>Patient Id</th>
+                <th style={{ padding: '15px', textAlign: 'left' }}>Actions</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {safeReports.length > 0 ? (
+                safeReports.map((report) => (
+                  <tr key={report?._id} style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '15px' }}>{report?.fileName ?? 'Report'}</td>
+                    <td style={{ padding: '15px' }}>{String(report?.patientId ?? '').slice(-8) || '—'}</td>
+                    <td style={{ padding: '15px' }}>
+                      <a href={getReportUrl(report)} target="_blank" rel="noreferrer" style={{ marginRight: '10px' }}>
+                        View
+                      </a>
+                      <a href={getReportUrl(report)} download style={{ marginRight: '10px' }}>
+                        Download
+                      </a>
+                      <button type="button" onClick={() => handleDeleteReport(report?._id)} style={{ color: dangerRed, border: 'none', background: 'none', cursor: 'pointer' }}>
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={3} style={{ padding: '24px', textAlign: 'center', color: '#666' }}>
+                    No prescriptions uploaded yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

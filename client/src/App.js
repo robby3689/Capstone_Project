@@ -14,6 +14,7 @@ import Services from './pages/Services';
 import ServiceDetail from './pages/ServiceDetail';
 import Reports from './pages/Reports';
 import ForgotPassword from './pages/ForgotPassword';
+import Appointments from './pages/Appointments';
 
 const normalizeRole = (role) => (role == null ? '' : String(role)).toLowerCase().trim();
 
@@ -105,6 +106,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <Reports />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/appointments"
+            element={
+              <ProtectedRoute allowedRoles={['patient', 'user']}>
+                <Appointments />
               </ProtectedRoute>
             }
           />
