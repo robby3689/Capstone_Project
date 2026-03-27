@@ -22,15 +22,11 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const token = localStorage.getItem('token');
   const userRole = normalizeRole(localStorage.getItem('role'));
 
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!token) return <Navigate to="/login" replace />;
 
   if (allowedRoles?.length) {
     const isAllowed = allowedRoles.some((r) => normalizeRole(r) === userRole);
-    if (!isAllowed) {
-      return <Navigate to="/" replace />;
-    }
+    if (!isAllowed) return <Navigate to="/" replace />;
   }
 
   return children;
@@ -42,82 +38,41 @@ function App() {
       <Navbar />
       <div style={{ minHeight: '85vh' }}>
         <Routes>
+          {/* PUBLIC ROUTES */}
           <Route path="/" element={<Home />} />
+          <Route path="/home" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/services/:type" element={<ServiceDetail />} />
 
-          <Route
-            path="/services"
-            element={<Services />}
-          />
-          <Route
-            path="/services/:type"
-            element={<ServiceDetail />}
-          />
+          {/* PATIENT DASHBOARD */}
+          <Route path="/dashboard" element={
+            <ProtectedRoute allowedRoles={['patient', 'user']}>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['patient', 'user']}>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
+          {/* DOCTOR DASHBOARD */}
+          <Route path="/doctor-dashboard" element={
+            <ProtectedRoute allowedRoles={['doctor', 'staff']}>
+              <DoctorDashboard />
+            </ProtectedRoute>
+          } />
 
-          <Route
-            path="/book"
-            element={
-              <ProtectedRoute allowedRoles={['patient', 'user']}>
-                <Booking />
-              </ProtectedRoute>
-            }
-          />
+          {/* ADMIN DASHBOARD */}
+          <Route path="/admin" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
 
-          <Route
-            path="/doctor-dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['doctor', 'staff']}>
-                <DoctorDashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/reports"
-            element={
-              <ProtectedRoute>
-                <Reports />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/appointments"
-            element={
-              <ProtectedRoute allowedRoles={['patient', 'user']}>
-                <Appointments />
-              </ProtectedRoute>
-            }
-          />
+          {/* COMMON PROTECTED ROUTES */}
+          <Route path="/book" element={<ProtectedRoute allowedRoles={['patient', 'user']}><Booking /></ProtectedRoute>} />
+          <Route path="/appointments" element={<ProtectedRoute allowedRoles={['patient', 'user']}><Appointments /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
