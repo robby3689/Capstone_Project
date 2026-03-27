@@ -12,20 +12,18 @@ import Footer from './components/Footer';
 import Services from './pages/Services';
 import DoctorDashboard from './pages/DoctorDashboard';
 import ServiceDetail from './pages/ServiceDetail';
+import Reports from './pages/Reports';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const token = localStorage.getItem('token');
   const userRole = localStorage.getItem('role');
 
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!token) return <Navigate to="/login" replace />;
 
   if (allowedRoles) {
-    const isAllowed = allowedRoles.map(r => r.toLowerCase()).includes(userRole?.toLowerCase());
+    const isAllowed = allowedRoles.some(r => r.toLowerCase() === userRole?.toLowerCase());
     if (!isAllowed) return <Navigate to="/" replace />;
   }
-
   return children;
 };
 
@@ -35,16 +33,13 @@ function App() {
       <Navbar />
       <div style={{ minHeight: '85vh' }}> 
         <Routes>
-
           <Route path="/" element={<Home />} /> 
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/services" element={<Services />} />
           <Route path="/services/:type" element={<ServiceDetail />} />
-
-
           <Route path="/home" element={<Home />} /> 
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
 
           <Route path="/dashboard" element={
             <ProtectedRoute allowedRoles={['Patient', 'User']}>
@@ -63,6 +58,7 @@ function App() {
               <AdminDashboard />
             </ProtectedRoute>
           } />
+          
 
           <Route path="/doctor-dashboard" element={
             <ProtectedRoute allowedRoles={['Doctor', 'Staff']}>
@@ -70,6 +66,7 @@ function App() {
             </ProtectedRoute>
           } />
 
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

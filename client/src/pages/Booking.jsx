@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import API from '../api'; // Connects to Render
+import API from '../api'; 
 
 const Booking = () => {
   const [date, setDate] = useState('');
@@ -21,6 +21,13 @@ const Booking = () => {
 
   const handleDateChange = (e) => {
     const selectedDate = e.target.value;
+    const today = new Date().toISOString().split('T')[0];
+    
+    if (selectedDate < today) {
+      alert("You cannot book an appointment in the past.");
+      return;
+    }
+
     setDate(selectedDate);
     const day = new Date(selectedDate).getUTCDay();
     setIsClosed(day === 0); 
@@ -31,20 +38,31 @@ const Booking = () => {
     if (!time) return alert("Please select a time slot");
     if (isClosed) return alert("Clinic is closed on Sundays.");
     
-    setLoading(true);
     const userId = localStorage.getItem('userId');
+    const token = localStorage.getItem('token');
 
+    if (!userId || userId === "undefined" || userId === "null") {
+      alert("Session Error: User ID not found. Please log out and log back in.");
+      console.error("The userId in localStorage is:", userId);
+      return;
+    }
+
+    setLoading(true);
     try {
       await API.post('/appointments/book', {
-        userId,
+        userId: userId, 
         date,
         time,
         service
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      alert("Appointment successfully scheduled!");
+      
+      alert("Success! Your appointment is scheduled.");
       navigate('/dashboard');
     } catch (err) {
-      alert("Error: Could not save booking. Please try again.");
+      console.error("Full Error Response:", err.response?.data);
+      alert(err.response?.data?.msg || "Error: Could not save booking. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -60,15 +78,13 @@ const Booking = () => {
       <div style={{ flex: 0.8 }}>
         <h1 style={{ color: darkGreen, fontSize: '32px', marginBottom: '15px' }}>Schedule Your Visit</h1>
         <p style={{ color: '#52796f', lineHeight: '1.6', fontSize: '16px' }}>
-          Select your preferred service and time. Our specialists at Evergreen Clinic Highbury 
-          are ready to provide you with the best care possible.
+          Our specialists at Evergreen Clinic Highbury are ready to provide you with the best care.
         </p>
         
         <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f1f8f5', borderRadius: '12px', border: `1px solid ${primaryGreen}` }}>
           <h4 style={{ color: darkGreen, margin: '0 0 10px 0' }}>Clinic Policy</h4>
           <ul style={{ color: '#2d6a4f', fontSize: '14px', paddingLeft: '20px', margin: 0 }}>
             <li>24-hour cancellation notice required.</li>
-            <li>Please arrive 10 minutes before your slot.</li>
             <li>Closed on Sundays for facility maintenance.</li>
           </ul>
         </div>

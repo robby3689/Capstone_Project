@@ -4,30 +4,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-router.post('/register', async (req, res) => {
-  try {
-    const { name, email, password, role } = req.body;
-    
-    let user = await User.findOne({ email });
-    if (user) return res.status(400).json({ msg: 'Email already registered' });
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    user = new User({ 
-      name, 
-      email, 
-      password: hashedPassword, 
-      role 
-    });
-
-    await user.save();
-    res.status(201).json({ msg: 'User registered successfully!' });
-  } catch (err) {
-    res.status(500).json({ msg: 'Registration failed' });
-  }
-});
-
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -46,31 +22,26 @@ router.post('/login', async (req, res) => {
 
     res.json({ 
       token, 
-      user: { id: user._id, name: user.name, role: user.role } 
+      user: { _id: user._id, name: user.name, role: user.role } 
     });
   } catch (err) {
     res.status(500).json({ msg: 'Login error' });
   }
 });
 
-router.get('/users', async (req, res) => {
-  try {
-    const users = await User.find().select('-password');
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ msg: 'Could not fetch users' });
-  }
-});
-
 router.put('/profile/:id', async (req, res) => {
   try {
+    const { name, phone, age, gender } = req.body;
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id, 
-      { name: req.body.name }, 
+      { $set: { name, phone, age, gender } }, 
       { new: true }
     ).select('-password');
+
+    if (!updatedUser) return res.status(404).json({ msg: 'User not found' });
     res.json(updatedUser);
   } catch (err) {
+    console.error("Update Error:", err.message);
     res.status(500).json({ msg: 'Update failed' });
   }
 });

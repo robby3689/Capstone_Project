@@ -9,6 +9,8 @@ build/
 # Backend specific
 server/node_modules/
 server/.env
+server/uploads/*
+
 
 # Frontend specific
 client/node_modules/

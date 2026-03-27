@@ -62,8 +62,8 @@ const Navbar = () => {
     borderRadius: '6px',
     textDecoration: 'none',
     fontWeight: 'bold',
-    marginRight: '25px',
-    fontSize: '14px'
+    fontSize: '14px',
+    transition: 'background 0.3s'
   };
 
   return (
@@ -73,34 +73,51 @@ const Navbar = () => {
       </Link>
 
       <div style={{ display: 'flex', alignItems: 'center' }}>
-        <a href="tel:911" style={emergencyBtn}>EMERGENCY 24/7</a>
+        
+        <a href="tel:911" style={emergencyBtn} onMouseOver={(e) => e.target.style.backgroundColor = '#c0392b'} onMouseOut={(e) => e.target.style.backgroundColor = '#e74c3c'}>
+          EMERGENCY 24/7
+        </a>
+
+        <div 
+          style={{ position: 'relative', marginLeft: '25px' }}
+          onMouseEnter={() => setShowDropdown(true)}
+          onMouseLeave={() => setShowDropdown(false)}
+        >
+          <span style={linkStyle} onClick={() => navigate('/services')}>Services</span>
+          <div style={dropdownStyle}>
+            <Link to="/services/emergency" style={dropdownItemStyle}>Emergency Care</Link>
+            <Link to="/services/cardiology" style={dropdownItemStyle}>Cardiology</Link>
+            <Link to="/services/pediatrics" style={dropdownItemStyle}>Pediatrics</Link>
+            <Link to="/services/diagnostics" style={dropdownItemStyle}>Diagnostics & Lab</Link>
+            <Link to="/services/surgery" style={dropdownItemStyle}>General Surgery</Link>
+            <Link to="/services/vaccination" style={dropdownItemStyle}>Vaccination</Link>
+          </div>
+        </div>
 
         {token ? (
           <>
             <Link style={linkStyle} to="/home">Home</Link>
 
-            <div 
-              style={{ position: 'relative', marginLeft: '25px' }}
-              onMouseEnter={() => setShowDropdown(true)}
-              onMouseLeave={() => setShowDropdown(false)}
-            >
-              <span style={{ ...linkStyle, marginLeft: 0 }}>Services</span>
-              <div style={dropdownStyle}>
-                <Link to="/services" style={dropdownItemStyle}>Emergency Care</Link>
-                <Link to="/services" style={dropdownItemStyle}>Cardiology</Link>
-                <Link to="/services" style={dropdownItemStyle}>Pediatrics</Link>
-                <Link to="/services" style={dropdownItemStyle}>Diagnostics & Lab</Link>
-                <Link to="/services" style={dropdownItemStyle}>General Surgery</Link>
-                <Link to="/services" style={dropdownItemStyle}>Vaccination</Link>
-              </div>
-            </div>
-
-            {role !== 'Admin' && (
-              <Link style={linkStyle} to="/book">Book Appointment</Link>
+            {role === 'Admin' && (
+              <>
+                <Link style={{ ...linkStyle, color: '#f39c12', fontWeight: 'bold' }} to="/admin">Admin Panel</Link>
+                <Link style={linkStyle} to="/reports">Manage Reports</Link>
+              </>
+            )}
+            
+            {(role === 'Doctor' || role === 'Staff') && (
+              <>
+                <Link style={{ ...linkStyle, color: '#3498db', fontWeight: 'bold' }} to="/doctor-dashboard">Doctor Panel</Link>
+                <Link style={linkStyle} to="/reports">Patient Reports</Link>
+              </>
             )}
 
-            {role === 'Admin' && (
-              <Link style={{ ...linkStyle, color: '#f39c12', fontWeight: 'bold' }} to="/admin">Admin Panel</Link>
+            {(role === 'Patient' || role === 'User') && (
+              <>
+                <Link style={linkStyle} to="/dashboard">My Health</Link>
+                <Link style={linkStyle} to="/book">Book Appointment</Link>
+                <Link style={linkStyle} to="/reports">My Reports</Link>
+              </>
             )}
 
             <Link style={linkStyle} to="/profile">Profile</Link>
