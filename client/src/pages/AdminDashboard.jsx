@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import API from '../api';
 import { API_BASE_URL } from '../api';
 
 const AdminDashboard = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [users, setUsers] = useState([]);
   const [allAppointments, setAllAppointments] = useState([]);
-  const [tab, setTab] = useState('appointments'); 
+  const [tab, setTab] = useState(searchParams.get('tab') || 'appointments');
   const [searchTerm, setSearchTerm] = useState('');
   const [allReports, setAllReports] = useState([]);
   const [selectedPatientId, setSelectedPatientId] = useState('');
@@ -22,6 +24,18 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchAdminData();
   }, []);
+
+  useEffect(() => {
+    const urlTab = searchParams.get('tab');
+    if (urlTab && urlTab !== tab) {
+      setTab(urlTab);
+    }
+  }, [searchParams, tab]);
+
+  const changeTab = (nextTab) => {
+    setTab(nextTab);
+    setSearchParams({ tab: nextTab });
+  };
 
   const fetchAdminData = async () => {
     try {
@@ -169,10 +183,10 @@ const AdminDashboard = () => {
       </div>
 
       <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
-        <button onClick={() => setTab('appointments')} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: tab === 'appointments' ? darkGreen : '#eee', color: tab === 'appointments' ? 'white' : '#444', cursor: 'pointer' }}>Master Schedule</button>
-        <button onClick={() => setTab('users')} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: tab === 'users' ? darkGreen : '#eee', color: tab === 'users' ? 'white' : '#444', cursor: 'pointer' }}>User Management</button>
-        <button onClick={() => setTab('prescriptions')} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: tab === 'prescriptions' ? darkGreen : '#eee', color: tab === 'prescriptions' ? 'white' : '#444', cursor: 'pointer' }}>Prescriptions</button>
-        <button onClick={() => setTab('doctors')} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: tab === 'doctors' ? darkGreen : '#eee', color: tab === 'doctors' ? 'white' : '#444', cursor: 'pointer' }}>Doctor Availability</button>
+        <button onClick={() => changeTab('appointments')} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: tab === 'appointments' ? darkGreen : '#eee', color: tab === 'appointments' ? 'white' : '#444', cursor: 'pointer' }}>Master Schedule</button>
+        <button onClick={() => changeTab('users')} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: tab === 'users' ? darkGreen : '#eee', color: tab === 'users' ? 'white' : '#444', cursor: 'pointer' }}>User Management</button>
+        <button onClick={() => changeTab('prescriptions')} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: tab === 'prescriptions' ? darkGreen : '#eee', color: tab === 'prescriptions' ? 'white' : '#444', cursor: 'pointer' }}>Prescriptions</button>
+        <button onClick={() => changeTab('doctors')} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: tab === 'doctors' ? darkGreen : '#eee', color: tab === 'doctors' ? 'white' : '#444', cursor: 'pointer' }}>Doctor Availability</button>
         {tab === 'users' && <input type="text" placeholder="Search by name or email..." style={{ marginLeft: 'auto', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', width: '250px' }} onChange={(e) => setSearchTerm(e.target.value)} />}
       </div>
 

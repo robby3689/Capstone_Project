@@ -134,16 +134,16 @@ const Navbar = () => {
 
             {isAdmin && (
               <>
-                <Link style={{ ...linkStyle, color: '#f39c12', fontWeight: 'bold' }} to="/admin">
+                <Link style={{ ...linkStyle, color: '#f39c12', fontWeight: 'bold' }} to="/admin?tab=appointments">
                   Admin Dashboard
                 </Link>
-                <Link style={linkStyle} to="/admin">
+                <Link style={linkStyle} to="/admin?tab=users">
                   Users
                 </Link>
-                <Link style={linkStyle} to="/admin">
+                <Link style={linkStyle} to="/admin?tab=appointments">
                   Appointments
                 </Link>
-                <Link style={linkStyle} to="/admin">
+                <Link style={linkStyle} to="/admin?tab=prescriptions">
                   Prescriptions
                 </Link>
               </>
@@ -151,13 +151,13 @@ const Navbar = () => {
 
             {isDoctor && (
               <>
-                <Link style={{ ...linkStyle, color: '#3498db', fontWeight: 'bold' }} to="/doctor-dashboard">
+                <Link style={{ ...linkStyle, color: '#3498db', fontWeight: 'bold' }} to="/doctor-dashboard?tab=appointments">
                   Doctor Dashboard
                 </Link>
-                <Link style={linkStyle} to="/doctor-dashboard">
+                <Link style={linkStyle} to="/doctor-dashboard?tab=appointments">
                   Appointments
                 </Link>
-                <Link style={linkStyle} to="/doctor-dashboard">
+                <Link style={linkStyle} to="/doctor-dashboard?tab=prescriptions">
                   Prescriptions
                 </Link>
                 <Link style={linkStyle} to="/profile">
