@@ -1,113 +1,150 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import API from '../api';
 
 const AdminDashboard = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [users, setUsers] = useState([]);
   const [allAppointments, setAllAppointments] = useState([]);
-  const [tab, setTab] = useState('users');
+  const [tab, setTab] = useState(searchParams.get('tab') || 'users');
+  const [searchTerm, setSearchTerm] = useState('');
+  
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'patient' });
 
-  // 1. Force a Fresh Fetch from the Server
-  const fetchAllData = useCallback(async () => {
+  const darkGreen = '#1b4332';
+  const primaryGreen = '#27ae60';
+  const dangerRed = '#e74c3c';
+
+  // --- RE-FETCH LOGIC ---
+  const fetchAdminData = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
       
-      // We add a timestamp to the URL to prevent browser caching
-      const timestamp = new Date().getTime();
+      // We add a random number to the URL to prevent the browser from showing "Old" data
+      const nocache = Math.random();
       const [userRes, appntRes] = await Promise.all([
-        API.get(`/auth/all-users?t=${timestamp}`, config),
-        API.get(`/appointments/all?t=${timestamp}`, config)
+        API.get(`/auth/all-users?v=${nocache}`, config),
+        API.get(`/appointments/all?v=${nocache}`, config)
       ]);
 
-      console.log("RAW USERS FROM SERVER:", userRes.data);
-      setUsers(userRes.data || []);
-      setAllAppointments(appntRes.data || []);
+      setUsers(Array.isArray(userRes.data) ? userRes.data : []);
+      setAllAppointments(Array.isArray(appntRes.data) ? appntRes.data : []);
     } catch (err) {
-      console.error("Fetch failed", err);
+      console.error("Admin Data Fetch Failed");
     }
   }, []);
 
   useEffect(() => {
-    fetchAllData();
-  }, [fetchAllData]);
+    fetchAdminData();
+  }, [fetchAdminData]);
 
   const handleAddUser = async (e) => {
     e.preventDefault();
     try {
-      // We force 'patient' role here to ensure it matches your DB schema
-      const payload = { ...newUser, role: 'patient' };
-      const res = await API.post('/auth/register', payload);
+      const payload = {
+        ...newUser,
+        role: newUser.role.toLowerCase().trim()
+      };
       
-      console.log("SERVER RESPONSE AFTER ADD:", res.data);
-      alert("SUCCESS: Patient added to Database!");
+      await API.post('/auth/register', payload);
+      alert("SUCCESS: New Patient Registered!");
       
       setShowAddModal(false);
       setNewUser({ name: '', email: '', password: '', role: 'patient' });
       
-      // WAIT 1 SECOND THEN REFETCH (gives the DB time to index)
+      // Wait a tiny bit for the Database to settle, then refresh
       setTimeout(() => {
-        fetchAllData();
-      }, 1000);
-
+        fetchAdminData();
+      }, 800);
+      
     } catch (err) {
       alert(err.response?.data?.msg || "Error adding user");
     }
   };
 
+  const handleDeleteUser = async (id) => {
+    if (!window.confirm("Delete this record?")) return;
+    try {
+      const token = localStorage.getItem('token');
+      await API.delete(`/auth/user/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      fetchAdminData();
+    } catch (err) { alert("Delete failed"); }
+  };
+
+  // Logic to filter the users list (Showing EVERYTHING if no search term)
+  const filteredUsers = (Array.isArray(users) ? users : []).filter(u => {
+    const search = searchTerm.toLowerCase();
+    return (u.name || '').toLowerCase().includes(search) || (u.email || '').toLowerCase().includes(search);
+  });
+
+  const tableHeaderStyle = { backgroundColor: '#f1f8f5', color: darkGreen, padding: '15px', textAlign: 'left', borderBottom: `2px solid ${primaryGreen}` };
+  const cellStyle = { padding: '15px', borderBottom: '1px solid #eee' };
+
   return (
-    <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>Admin Management Portal</h2>
-        <button 
-          onClick={() => setShowAddModal(true)}
-          style={{ padding: '10px 20px', backgroundColor: '#27ae60', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
-        >
-          + Register New Patient
-        </button>
+    <div style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 20px', minHeight: '80vh' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
+        <div>
+          <h2 style={{ color: darkGreen, margin: 0 }}>Clinic Administration</h2>
+          <p style={{ color: '#666' }}>Managing {users.length} registered users</p>
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={fetchAdminData} style={{ backgroundColor: '#eee', border: '1px solid #ddd', padding: '10px', borderRadius: '8px', cursor: 'pointer' }}>🔄 Force Sync</button>
+          <button onClick={() => setShowAddModal(true)} style={{ backgroundColor: primaryGreen, color: 'white', padding: '12px 24px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>+ Add New Patient</button>
+        </div>
       </div>
 
-      <div style={{ marginTop: '20px', display: 'flex', gap: '20px' }}>
-        <button onClick={() => setTab('users')} style={{ fontWeight: tab === 'users' ? 'bold' : 'normal' }}>All Users ({users.length})</button>
-        <button onClick={() => setTab('appointments')} style={{ fontWeight: tab === 'appointments' ? 'bold' : 'normal' }}>All Appointments ({allAppointments.length})</button>
+      <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+        <button onClick={() => setTab('users')} style={{ padding: '10px 20px', backgroundColor: tab === 'users' ? darkGreen : '#eee', color: tab === 'users' ? 'white' : '#444', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Patients & Staff</button>
+        <button onClick={() => setTab('appointments')} style={{ padding: '10px 20px', backgroundColor: tab === 'appointments' ? darkGreen : '#eee', color: tab === 'appointments' ? 'white' : '#444', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Live Appointments</button>
+        <input type="text" placeholder="Search by name..." style={{ marginLeft: 'auto', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', width: '250px' }} onChange={(e) => setSearchTerm(e.target.value)} />
       </div>
 
-      <div style={{ marginTop: '20px', backgroundColor: 'white', border: '1px solid #ddd', borderRadius: '8px' }}>
+      <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
         {tab === 'users' ? (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ backgroundColor: '#f9f9f9' }}>
-                <th style={{ padding: '12px', textAlign: 'left' }}>Name</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>Email</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>Role</th>
+              <tr>
+                <th style={tableHeaderStyle}>User Details</th>
+                <th style={tableHeaderStyle}>Role</th>
+                <th style={tableHeaderStyle}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => (
-                <tr key={user._id} style={{ borderTop: '1px solid #eee' }}>
-                  <td style={{ padding: '12px' }}>{user.name}</td>
-                  <td style={{ padding: '12px' }}>{user.email}</td>
-                  <td style={{ padding: '12px' }}>{user.role}</td>
+              {filteredUsers.length > 0 ? filteredUsers.map(user => (
+                <tr key={user._id}>
+                  <td style={cellStyle}>
+                    <div style={{ fontWeight: 'bold' }}>{user.name}</div>
+                    <div style={{ fontSize: '12px', color: '#666' }}>{user.email}</div>
+                  </td>
+                  <td style={cellStyle}>
+                    <span style={{ backgroundColor: '#eee', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', textTransform: 'uppercase', fontWeight: 'bold' }}>{user.role}</span>
+                  </td>
+                  <td style={cellStyle}>
+                    <button onClick={() => handleDeleteUser(user._id)} style={{ color: dangerRed, border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Remove</button>
+                  </td>
                 </tr>
-              ))}
+              )) : (
+                <tr><td colSpan="3" style={{ padding: '40px', textAlign: 'center', color: '#999' }}>No users found in database.</td></tr>
+              )}
             </tbody>
           </table>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ backgroundColor: '#f9f9f9' }}>
-                <th style={{ padding: '12px', textAlign: 'left' }}>Patient Name</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>Service</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>Time</th>
+              <tr>
+                <th style={tableHeaderStyle}>Patient</th>
+                <th style={tableHeaderStyle}>Service</th>
+                <th style={tableHeaderStyle}>Schedule</th>
               </tr>
             </thead>
             <tbody>
-              {allAppointments.map((app) => (
-                <tr key={app._id} style={{ borderTop: '1px solid #eee' }}>
-                  <td style={{ padding: '12px' }}>{app.userId?.name || app.userEmail || "Patient"}</td>
-                  <td style={{ padding: '12px' }}>{app.service}</td>
-                  <td style={{ padding: '12px' }}>{app.date} @ {app.time}</td>
+              {allAppointments.map(app => (
+                <tr key={app._id}>
+                  <td style={cellStyle}>{app.userId?.name || app.userEmail || "Patient"}</td>
+                  <td style={cellStyle}>{app.service}</td>
+                  <td style={cellStyle}>{app.date} at {app.time}</td>
                 </tr>
               ))}
             </tbody>
@@ -116,14 +153,33 @@ const AdminDashboard = () => {
       </div>
 
       {showAddModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <form onSubmit={handleAddUser} style={{ backgroundColor: 'white', padding: '30px', borderRadius: '10px', width: '300px' }}>
-            <h3>Add Patient</h3>
-            <input type="text" placeholder="Name" required style={{ width: '100%', marginBottom: '10px' }} onChange={e => setNewUser({...newUser, name: e.target.value})} />
-            <input type="email" placeholder="Email" required style={{ width: '100%', marginBottom: '10px' }} onChange={e => setNewUser({...newUser, email: e.target.value})} />
-            <input type="password" placeholder="Password" required style={{ width: '100%', marginBottom: '20px' }} onChange={e => setNewUser({...newUser, password: e.target.value})} />
-            <button type="submit" style={{ width: '100%', padding: '10px', backgroundColor: '#27ae60', color: 'white', border: 'none' }}>Save to Database</button>
-            <button type="button" onClick={() => setShowAddModal(false)} style={{ width: '100%', marginTop: '10px' }}>Cancel</button>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+          <form onSubmit={handleAddUser} style={{ backgroundColor: 'white', padding: '30px', borderRadius: '12px', width: '380px', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
+            <h3 style={{ marginTop: 0, color: darkGreen }}>Register New Patient</h3>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 'bold' }}>Full Name</label>
+              <input type="text" required style={{ width: '100%', padding: '10px', marginTop: '5px', boxSizing: 'border-box' }} onChange={e => setNewUser({...newUser, name: e.target.value})} />
+            </div>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 'bold' }}>Email Address</label>
+              <input type="email" required style={{ width: '100%', padding: '10px', marginTop: '5px', boxSizing: 'border-box' }} onChange={e => setNewUser({...newUser, email: e.target.value})} />
+            </div>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 'bold' }}>Password</label>
+              <input type="password" required style={{ width: '100%', padding: '10px', marginTop: '5px', boxSizing: 'border-box' }} onChange={e => setNewUser({...newUser, password: e.target.value})} />
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 'bold' }}>Assign Role</label>
+              <select style={{ width: '100%', padding: '10px', marginTop: '5px' }} onChange={e => setNewUser({...newUser, role: e.target.value})}>
+                <option value="patient">Patient</option>
+                <option value="doctor">Doctor</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="submit" style={{ flex: 1, padding: '12px', backgroundColor: primaryGreen, color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>Register</button>
+              <button type="button" onClick={() => setShowAddModal(false)} style={{ flex: 1, padding: '12px', backgroundColor: '#eee', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Cancel</button>
+            </div>
           </form>
         </div>
       )}
