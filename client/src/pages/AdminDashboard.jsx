@@ -12,7 +12,7 @@ const AdminDashboard = () => {
   const [selectedReportFile, setSelectedReportFile] = useState(null);
   
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'Patient' });
+  const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'patient' });
 
   const darkGreen = '#1b4332';
   const primaryGreen = '#27ae60';
@@ -43,11 +43,18 @@ const AdminDashboard = () => {
   const handleAddUser = async (e) => {
     e.preventDefault();
     try {
-      await API.post('/auth/register', newUser);
+      const payload = {
+        ...newUser,
+        role: String(newUser?.role || 'patient').toLowerCase().trim(),
+      };
+      await API.post('/auth/register', payload);
       alert("User created successfully!");
       setShowAddModal(false);
+      setNewUser({ name: '', email: '', password: '', role: 'patient' });
       fetchAdminData();
-    } catch (err) { alert("Failed to add user"); }
+    } catch (err) {
+      alert(err?.response?.data?.msg || err?.response?.data?.error || "Failed to add user");
+    }
   };
 
   const handleDeleteUser = async (id) => {
@@ -224,7 +231,7 @@ const AdminDashboard = () => {
         ) : tab === 'prescriptions' ? (
           <div style={{ padding: '18px' }}>
             <h3 style={{ marginTop: 0, color: darkGreen }}>Manage Prescriptions / Reports</h3>
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '18px' }}>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '18px', flexWrap: 'wrap' }}>
               <select value={selectedPatientId} onChange={(e) => setSelectedPatientId(e.target.value)} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}>
                 <option value="">Select patient</option>
                 {patientUsers.map((p) => (
@@ -233,6 +240,13 @@ const AdminDashboard = () => {
                   </option>
                 ))}
               </select>
+              <input
+                type="text"
+                placeholder="Or paste patientId"
+                value={selectedPatientId}
+                onChange={(e) => setSelectedPatientId(e.target.value)}
+                style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd', minWidth: '260px' }}
+              />
               <input type="file" accept=".pdf" onChange={(e) => setSelectedReportFile(e?.target?.files?.[0] ?? null)} />
               <button type="button" onClick={handleUploadReport} style={{ backgroundColor: primaryGreen, color: 'white', border: 'none', borderRadius: '6px', padding: '10px 16px' }}>
                 Upload
@@ -307,13 +321,13 @@ const AdminDashboard = () => {
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000 }}>
           <form onSubmit={handleAddUser} style={{ backgroundColor: 'white', padding: '30px', borderRadius: '12px', width: '400px' }}>
             <h3>Add New User</h3>
-            <input type="text" placeholder="Full Name" required style={{ width: '100%', padding: '10px', margin: '10px 0' }} onChange={(e) => setNewUser({...newUser, name: e.target.value})} />
-            <input type="email" placeholder="Email" required style={{ width: '100%', padding: '10px', margin: '10px 0' }} onChange={(e) => setNewUser({...newUser, email: e.target.value})} />
-            <input type="password" placeholder="Password" required style={{ width: '100%', padding: '10px', margin: '10px 0' }} onChange={(e) => setNewUser({...newUser, password: e.target.value})} />
-            <select style={{ width: '100%', padding: '10px', margin: '10px 0' }} onChange={(e) => setNewUser({...newUser, role: e.target.value})}>
-              <option value="Patient">Patient</option>
-              <option value="Doctor">Doctor</option>
-              <option value="Admin">Admin</option>
+            <input type="text" placeholder="Full Name" required value={newUser.name} style={{ width: '100%', padding: '10px', margin: '10px 0' }} onChange={(e) => setNewUser({...newUser, name: e.target.value})} />
+            <input type="email" placeholder="Email" required value={newUser.email} style={{ width: '100%', padding: '10px', margin: '10px 0' }} onChange={(e) => setNewUser({...newUser, email: e.target.value})} />
+            <input type="password" placeholder="Password" required value={newUser.password} style={{ width: '100%', padding: '10px', margin: '10px 0' }} onChange={(e) => setNewUser({...newUser, password: e.target.value})} />
+            <select value={newUser.role} style={{ width: '100%', padding: '10px', margin: '10px 0' }} onChange={(e) => setNewUser({...newUser, role: e.target.value})}>
+              <option value="patient">Patient</option>
+              <option value="doctor">Doctor</option>
+              <option value="admin">Admin</option>
             </select>
             <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
               <button type="submit" style={{ flex: 1, padding: '10px', backgroundColor: primaryGreen, color: 'white', border: 'none', borderRadius: '6px' }}>Save User</button>
