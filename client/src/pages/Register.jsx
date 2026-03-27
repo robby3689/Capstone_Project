@@ -4,22 +4,33 @@ import { useNavigate, Link } from 'react-router-dom';
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    name: '', email: '', password: '', confirmPassword: '', role: 'Patient'
+    name: '', email: '', password: '', confirmPassword: '', role: 'patient' 
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const API_BASE_URL = 'https://evergreen-clinic-backend.onrender.com/api';
 
   const handleRegister = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) return alert("Passwords do not match!");
     
     setLoading(true);
+
+    const payload = {
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      role: formData.role.toLowerCase() 
+    };
+
     try {
-      await axios.post('http://localhost:5000/api/auth/register', formData);
+      await axios.post(`${API_BASE_URL}/auth/register`, payload);
       alert("Registration Successful! Please login.");
       navigate('/login');
     } catch (err) {
-      alert(err.response?.data?.msg || "Registration failed.");
+      console.error("Register Error:", err.response?.data);
+      alert(err.response?.data?.msg || "Registration failed. Please check the console.");
     } finally {
       setLoading(false);
     }
@@ -33,16 +44,25 @@ const Register = () => {
         <h2 style={{ color: '#1b4332', textAlign: 'center', marginBottom: '10px' }}>Create Account</h2>
         <form onSubmit={handleRegister}>
           <label style={{ fontWeight: 'bold', fontSize: '14px' }}>Registering as:</label>
-          <select style={inputStyle} value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})}>
-            <option value="Patient">Patient / Client</option>
-            <option value="Doctor">Doctor / Staff</option>
-            <option value="Admin">System Admin</option>
+          <select 
+            style={inputStyle} 
+            value={formData.role} 
+            onChange={(e) => setFormData({...formData, role: e.target.value})}
+          >
+            <option value="patient">Patient / Client</option>
+            <option value="doctor">Doctor / Staff</option>
+            <option value="admin">System Admin</option>
           </select>
           <input type="text" placeholder="Full Name" style={inputStyle} onChange={(e) => setFormData({...formData, name: e.target.value})} required />
           <input type="email" placeholder="Email Address" style={inputStyle} onChange={(e) => setFormData({...formData, email: e.target.value})} required />
           <input type="password" placeholder="Password" style={inputStyle} onChange={(e) => setFormData({...formData, password: e.target.value})} required />
           <input type="password" placeholder="Confirm Password" style={inputStyle} onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} required />
-          <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', backgroundColor: loading ? '#ccc' : '#27ae60', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+          
+          <button 
+            type="submit" 
+            disabled={loading} 
+            style={{ width: '100%', padding: '14px', backgroundColor: loading ? '#ccc' : '#27ae60', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+          >
             {loading ? 'Creating Account...' : 'Register Now'}
           </button>
         </form>
