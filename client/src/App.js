@@ -21,6 +21,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   if (!token) return <Navigate to="/login" replace />;
 
   if (allowedRoles) {
+    // FIX: Normalizing case sensitivity
     const isAllowed = allowedRoles.some(r => r.toLowerCase() === userRole?.toLowerCase());
     if (!isAllowed) return <Navigate to="/" replace />;
   }
@@ -42,26 +43,25 @@ function App() {
           <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
 
           <Route path="/dashboard" element={
-            <ProtectedRoute allowedRoles={['Patient', 'User']}>
+            <ProtectedRoute allowedRoles={['patient', 'user']}>
               <Dashboard />
             </ProtectedRoute>
           } />
           
           <Route path="/book" element={
-            <ProtectedRoute allowedRoles={['Patient', 'User']}>
+            <ProtectedRoute allowedRoles={['patient', 'user']}>
               <Booking />
             </ProtectedRoute>
           } />
 
           <Route path="/admin" element={
-            <ProtectedRoute allowedRoles={['Admin']}>
+            <ProtectedRoute allowedRoles={['admin']}>
               <AdminDashboard />
             </ProtectedRoute>
           } />
-          
 
           <Route path="/doctor-dashboard" element={
-            <ProtectedRoute allowedRoles={['Doctor', 'Staff']}>
+            <ProtectedRoute allowedRoles={['doctor', 'staff']}>
               <DoctorDashboard />
             </ProtectedRoute>
           } />

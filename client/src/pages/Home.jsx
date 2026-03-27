@@ -1,69 +1,95 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { Link } from 'react-router-dom';
 
-const Home = () => {
+const Dashboard = () => {
+  const [appointments, setAppointments] = useState([]);
+  const [myReports, setMyReports] = useState([]); 
+  const [editingId, setEditingId] = useState(null); 
+  const [editData, setEditData] = useState({ date: '', time: '' });
+  
+  const userId = localStorage.getItem('userId');
+  const userName = localStorage.getItem('name');
   const token = localStorage.getItem('token');
-  const name = localStorage.getItem('name') || 'Patient';
-  const role = localStorage.getItem('role');
-  const navigate = useNavigate();
-
-  const darkGreen = '#1b4332';
   const primaryGreen = '#27ae60';
-  const lightBg = '#f8fbfc';
+  const darkGreen = '#1b4332';
 
-  const getDashboardLink = () => {
-    if (role === 'Admin') return '/admin';
-    if (role === 'Doctor') return '/doctor-dashboard';
-    return '/dashboard';
+  const timeSlots = ["09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM"];
+
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+
+  useEffect(() => {
+    if (userId && token) {
+      fetchDashboardData();
+    }
+  }, [userId, token]);
+
+  const fetchDashboardData = async () => {
+    try {
+      // FIX: Clean URLs
+      const appRes = await axios.get(`https://evergreen-clinic-backend.onrender.com/api/appointments/user/${userId}`, config);
+      setAppointments(Array.isArray(appRes.data) ? appRes.data : []);
+      
+      const reportRes = await axios.get(`https://evergreen-clinic-backend.onrender.com/api/reports/patient/${userId}`, config);
+      setMyReports(Array.isArray(reportRes.data) ? reportRes.data : []);
+    } catch (err) {
+      console.error("Fetch Error:", err);
+      setAppointments([]);
+    }
   };
 
-  const cardStyle = {
-    backgroundColor: 'white', padding: '40px 30px', borderRadius: '16px',
-    boxShadow: '0 10px 30px rgba(0,0,0,0.05)', textAlign: 'center',
-    flex: '1', margin: '0 15px', borderTop: `6px solid ${primaryGreen}`
+  const handleReschedule = async (id) => {
+    try {
+      await axios.put(`https://evergreen-clinic-backend.onrender.com/api/appointments/reschedule/${id}`, editData, config);
+      setEditingId(null);
+      fetchDashboardData(); 
+      alert("Success!");
+    } catch (err) { alert("Error updating."); }
+  };
+
+  const handleCancel = async (id) => {
+    if (window.confirm("Cancel this?")) {
+      try {
+        await axios.delete(`https://evergreen-clinic-backend.onrender.com/api/appointments/cancel/${id}`, config);
+        fetchDashboardData();
+      } catch (err) { alert("Failed."); }
+    }
   };
 
   return (
-    <div style={{ backgroundColor: lightBg, minHeight: '100vh' }}>
-      <div style={{ padding: '80px 60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'white' }}>
-        <div style={{ flex: '1', paddingRight: '40px' }}>
-          <h1 style={{ fontSize: '52px', color: darkGreen, marginBottom: '20px', fontWeight: '800' }}>
-            {token ? `Welcome Back, ${name}` : 'Healthcare Excellence in Highbury'}
-          </h1>
-          <p style={{ fontSize: '19px', color: '#52796f', marginBottom: '40px', lineHeight: '1.6' }}>
-            Evergreen Clinic provides integrated medical services, from primary care to 
-            advanced diagnostics. Manage your health journey 24/7 through our digital portal.
-          </p>
-          <div style={{ display: 'flex', gap: '20px' }}>
-            {token ? (
-              <button 
-                onClick={() => navigate(getDashboardLink())} 
-                style={{ padding: '16px 40px', backgroundColor: primaryGreen, color: 'white', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '17px' }}
-              >
-                Go to My Dashboard
-              </button>
-            ) : (
-              <>
-                <Link to="/register" style={{ padding: '16px 40px', backgroundColor: primaryGreen, color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>Register Now</Link>
-                <Link to="/login" style={{ padding: '16px 40px', backgroundColor: 'transparent', color: darkGreen, border: `2px solid ${darkGreen}`, borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>Member Login</Link>
-              </>
-            )}
-          </div>
+    <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '20px', minHeight: '80vh' }}>
+      <div style={{ backgroundColor: darkGreen, color: 'white', padding: '30px', borderRadius: '12px', marginBottom: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h2 style={{ margin: 0 }}>Welcome, {userName || 'Patient'}</h2>
+          <p style={{ margin: '5px 0 0 0', opacity: 0.8 }}>ID: {userId?.substring(0, 8)}</p>
         </div>
-        <div style={{ flex: '0.9', height: '450px', borderRadius: '30px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
-          <img src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1000" alt="Clinic" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        </div>
+        <Link to="/profile" style={{ backgroundColor: primaryGreen, color: 'white', padding: '10px 20px', borderRadius: '8px', textDecoration: 'none' }}>Profile</Link>
       </div>
 
-      <div style={{ padding: '80px 60px', textAlign: 'center' }}>
-        <h2 style={{ color: darkGreen, fontSize: '32px', marginBottom: '50px' }}>Our Medical Pillars</h2>
-        <div style={{ display: 'flex' }}>
-          <div style={cardStyle}><h3>Family Medicine</h3><p>Comprehensive care for all ages.</p></div>
-          <div style={cardStyle}><h3>Diagnostics</h3><p>Instant digital lab results.</p></div>
-          <div style={cardStyle}><h3>Emergency</h3><p>24/7 Priority medical response.</p></div>
-        </div>
+      <h2 style={{ color: darkGreen }}>My Appointments</h2>
+      <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ backgroundColor: '#f1f8f5' }}>
+              <th style={{ padding: '15px', textAlign: 'left' }}>Service</th>
+              <th style={{ padding: '15px', textAlign: 'left' }}>Date</th>
+              <th style={{ padding: '15px', textAlign: 'left' }}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {appointments.length > 0 ? appointments.map((app) => (
+              <tr key={app._id} style={{ borderBottom: '1px solid #eee' }}>
+                <td style={{ padding: '15px' }}>{app.service}</td>
+                <td style={{ padding: '15px' }}>{app.date} at {app.time}</td>
+                <td style={{ padding: '15px' }}>
+                  <button onClick={() => handleCancel(app._id)} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>Cancel</button>
+                </td>
+              </tr>
+            )) : <tr><td colSpan="3" style={{ padding: '20px', textAlign: 'center' }}>No appointments.</td></tr>}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 };
-export default Home;
+export default Dashboard;
