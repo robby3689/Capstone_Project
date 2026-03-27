@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const API_BASE_URL = 'https://evergreen-clinic-backend.onrender.com/api';
+
 const API = axios.create({
-  baseURL: 'https://evergreen-clinic-backend.onrender.com/api',
+  baseURL: API_BASE_URL,
 });
 
 API.interceptors.request.use((config) => {
@@ -13,3 +15,4 @@ API.interceptors.request.use((config) => {
 });
 
 export default API;
+export { API_BASE_URL }; 
