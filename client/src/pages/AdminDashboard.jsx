@@ -21,7 +21,6 @@ const AdminDashboard = () => {
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
       
-      // Attempting to fetch both lists to ensure interconnection
       const [userRes, appntRes] = await Promise.all([
         API.get('/auth/all-users', config),
         API.get('/appointments/all', config)
@@ -47,7 +46,6 @@ const AdminDashboard = () => {
       setShowAddModal(false);
       setNewUser({ name: '', email: '', password: '', role: 'patient' });
       
-      // Immediate refresh so the new patient shows in the list
       await fetchClinicData();
       alert("Patient registered successfully!");
     } catch (err) {
@@ -67,7 +65,8 @@ const AdminDashboard = () => {
 
   const filteredUsers = users.filter(u => 
     (u.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
+    (u.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (u._id || '').includes(searchTerm) // Also allow searching by ID
   );
 
   const tableHeaderStyle = { backgroundColor: '#f8f9fa', color: darkGreen, padding: '15px', textAlign: 'left', borderBottom: '2px solid #dee2e6' };
@@ -103,6 +102,7 @@ const AdminDashboard = () => {
             <thead>
               <tr>
                 <th style={tableHeaderStyle}>User Details</th>
+                <th style={tableHeaderStyle}>Patient ID</th> {/* NEW COLUMN HEADER */}
                 <th style={tableHeaderStyle}>Role</th>
                 <th style={tableHeaderStyle}>Actions</th>
               </tr>
@@ -115,6 +115,9 @@ const AdminDashboard = () => {
                     <div style={{ fontSize: '12px', color: '#666' }}>{user.email}</div>
                   </td>
                   <td style={cellStyle}>
+                    <code style={{ backgroundColor: '#f4f4f4', padding: '4px 8px', borderRadius: '4px', fontSize: '12px' }}>{user._id}</code> {/* DISPLAYING THE ID */}
+                  </td>
+                  <td style={cellStyle}>
                     <span style={{ backgroundColor: '#f0f0f0', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', textTransform: 'uppercase', fontWeight: 'bold' }}>{user.role}</span>
                   </td>
                   <td style={cellStyle}>
@@ -122,7 +125,7 @@ const AdminDashboard = () => {
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan="3" style={{ padding: '50px', textAlign: 'center', color: '#999' }}>No users found. Check backend connectivity.</td></tr>
+                <tr><td colSpan="4" style={{ padding: '50px', textAlign: 'center', color: '#999' }}>No users found. Check backend connectivity.</td></tr>
               )}
             </tbody>
           </table>
