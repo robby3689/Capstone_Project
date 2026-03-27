@@ -25,13 +25,11 @@ const AdminDashboard = () => {
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
       
-      // Use Promise.all to fetch everything at once
       const [userRes, appntRes] = await Promise.all([
         API.get('/auth/all-users', config),
         API.get('/appointments/all', config)
       ]);
 
-      console.log("Admin Users Loaded:", userRes.data); // Debug to see what the server sends
       setUsers(Array.isArray(userRes.data) ? userRes.data : []);
       setAllAppointments(Array.isArray(appntRes.data) ? appntRes.data : []);
     } catch (err) { 
@@ -42,26 +40,49 @@ const AdminDashboard = () => {
   const handleAddUser = async (e) => {
     e.preventDefault();
     try {
-      // FORCE LOWERCASE ROLE BEFORE SENDING
       const payload = {
         ...newUser,
         role: newUser.role.toLowerCase().trim()
       };
       
       await API.post('/auth/register', payload);
-      
       alert("User added successfully!");
       setShowAddModal(false);
       setNewUser({ name: '', email: '', password: '', role: 'patient' });
-      
-      // CRITICAL: Re-fetch data immediately to show the new user
       await fetchAdminData(); 
     } catch (err) { 
       alert(err.response?.data?.msg || "Failed to add user"); 
     }
   };
 
-  // FIX: Case-insensitive filtering
+  // --- NEW: FUNCTION TO DELETE A USER ---
+  const handleDeleteUser = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this user? This cannot be undone.")) return;
+    try {
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      await API.delete(`/auth/user/${id}`, config);
+      alert("User deleted");
+      fetchAdminData();
+    } catch (err) {
+      alert("Error deleting user");
+    }
+  };
+
+  // --- NEW: FUNCTION TO CANCEL AN APPOINTMENT ---
+  const handleCancelAppointment = async (id) => {
+    if (!window.confirm("Cancel this appointment?")) return;
+    try {
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      await API.delete(`/appointments/cancel/${id}`, config);
+      alert("Appointment cancelled");
+      fetchAdminData();
+    } catch (err) {
+      alert("Error cancelling appointment");
+    }
+  };
+
   const filteredUsers = (Array.isArray(users) ? users : []).filter(u => {
     const nameMatch = (u.name || '').toLowerCase().includes(searchTerm.toLowerCase());
     const emailMatch = (u.email || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -111,7 +132,7 @@ const AdminDashboard = () => {
                   <td style={cellStyle}>{app.service}</td>
                   <td style={cellStyle}>{app.date} at {app.time}</td>
                   <td style={cellStyle}>
-                    <button onClick={() => handleDeleteUser(app._id)} style={{ color: dangerRed, border: 'none', background: 'none', cursor: 'pointer' }}>Cancel</button>
+                    <button onClick={() => handleCancelAppointment(app._id)} style={{ color: dangerRed, border: 'none', background: 'none', cursor: 'pointer' }}>Cancel</button>
                   </td>
                 </tr>
               ))}
@@ -161,7 +182,7 @@ const AdminDashboard = () => {
             <input type="password" required style={{ width: '100%', marginBottom: '15px', padding: '10px', boxSizing: 'border-box' }} onChange={e => setNewUser({...newUser, password: e.target.value})} />
             
             <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Role</label>
-            <select style={{ width: '100%', marginBottom: '20px', padding: '10px' }} onChange={e => setNewUser({...newUser, role: e.target.value})}>
+            <select style={{ width: '100%', marginBottom: '20px', padding: '10px' }} value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value})}>
               <option value="patient">Patient</option>
               <option value="doctor">Doctor</option>
               <option value="admin">Admin</option>
