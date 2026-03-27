@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { Link } from 'react-router-dom';
+import API from '../api';
 
 const Appointments = () => {
   const [history, setHistory] = useState([]);
@@ -9,8 +9,9 @@ const Appointments = () => {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await axios.get(`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/appointments/user/${userId}`);
-        setHistory(res.data);
+        const res = await API.get(`/appointments/user/${userId}`);
+        const data = res?.data;
+        setHistory(Array.isArray(data) ? data : []);
       } catch (err) {
         console.log("Error loading history");
       }
@@ -67,7 +68,7 @@ const Appointments = () => {
       </div>
 
       <div style={{ marginTop: '20px' }}>
-        <Link to="/home" style={{ color: '#2c3e50', textDecoration: 'none' }}>← Back to Home</Link>
+        <Link to="/" style={{ color: '#2c3e50', textDecoration: 'none' }}>← Back to Home</Link>
       </div>
     </div>
   );

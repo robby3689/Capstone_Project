@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import API from '../api';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -19,10 +19,12 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/auth/user/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` }
+        const res = await API.get(`/auth/user/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-        setProfileData(res.data);
+        if (res?.data) {
+          setProfileData((prev) => ({ ...prev, ...res.data }));
+        }
       } catch (err) {
         setProfileData(prev => ({
           ...prev,
@@ -37,11 +39,11 @@ const Profile = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/auth/profile/${userId}`, profileData, {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      await API.put(`/auth/profile/${userId}`, profileData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       localStorage.setItem('name', profileData.name);
@@ -56,8 +58,8 @@ const Profile = () => {
   const handleDeleteAccount = async () => {
     if (window.confirm("Are you sure? This will delete all your records.")) {
       try {
-        await axios.delete(`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/auth/user/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` }
+        await API.delete(`/auth/user/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
         localStorage.clear();
         navigate('/login');

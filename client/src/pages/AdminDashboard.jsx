@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import API from '../api';
 
 const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
@@ -24,11 +24,11 @@ const AdminDashboard = () => {
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
       
-      const userRes = await axios.get('[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/auth/all-users', config);
-      const appntRes = await axios.get('[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/appointments/all', config);
-      
-      setUsers(userRes.data);
-      setAllAppointments(appntRes.data);
+      const userRes = await API.get('/auth/all-users', config);
+      const appntRes = await API.get('/appointments/all', config);
+
+      setUsers(Array.isArray(userRes?.data) ? userRes.data : []);
+      setAllAppointments(Array.isArray(appntRes?.data) ? appntRes.data : []);
     } catch (err) {
       console.error("Admin data fetch failed.");
     }
@@ -37,7 +37,7 @@ const AdminDashboard = () => {
   const handleAddUser = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/auth/register', newUser);
+      await API.post('/auth/register', newUser);
       alert("User created successfully!");
       setShowAddModal(false);
       fetchAdminData();
@@ -47,7 +47,7 @@ const AdminDashboard = () => {
   const handleDeleteUser = async (id) => {
     if (window.confirm("Permanently remove this patient from the records?")) {
       try {
-        await axios.delete(`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/auth/user/${id}`);
+        await API.delete(`/auth/user/${id}`);
         setUsers(users.filter(u => u._id !== id));
       } catch (err) { alert("Delete failed"); }
     }
@@ -56,15 +56,15 @@ const AdminDashboard = () => {
   const handleDeleteAppointment = async (id) => {
     if (window.confirm("Cancel and delete this appointment?")) {
       try {
-        await axios.delete(`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/appointments/${id}`);
+        await API.delete(`/appointments/${id}`);
         setAllAppointments(allAppointments.filter(a => a._id !== id));
       } catch (err) { alert("Failed to delete appointment"); }
     }
   };
 
-  const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = (Array.isArray(users) ? users : []).filter((user) =>
+    (user?.name ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (user?.email ?? '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const tableHeaderStyle = { backgroundColor: '#f1f8f5', color: darkGreen, padding: '15px', textAlign: 'left', borderBottom: `2px solid ${primaryGreen}` };
@@ -88,11 +88,11 @@ const AdminDashboard = () => {
       <div style={{ display: 'flex', gap: '20px', marginBottom: '40px' }}>
         <div style={{ flex: 1, backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', borderLeft: `6px solid ${primaryGreen}` }}>
           <p style={{ color: '#666', margin: 0 }}>Total Patients</p>
-          <h2 style={{ color: darkGreen }}>{users.length}</h2>
+          <h2 style={{ color: darkGreen }}>{Array.isArray(users) ? users.length : 0}</h2>
         </div>
         <div style={{ flex: 1, backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', borderLeft: `6px solid ${warningOrange}` }}>
           <p style={{ color: '#666', margin: 0 }}>Active Appointments</p>
-          <h2 style={{ color: darkGreen }}>{allAppointments.length}</h2>
+          <h2 style={{ color: darkGreen }}>{Array.isArray(allAppointments) ? allAppointments.length : 0}</h2>
         </div>
       </div>
 
@@ -114,13 +114,13 @@ const AdminDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {allAppointments.map(app => (
-                <tr key={app._id}>
-                  <td style={cellStyle}>{app.userEmail || app.userId}</td>
-                  <td style={cellStyle}>{app.service}</td>
-                  <td style={cellStyle}>{app.date} at {app.time}</td>
+              {(Array.isArray(allAppointments) ? allAppointments : []).map((app) => (
+                <tr key={app?._id}>
+                  <td style={cellStyle}>{app?.userEmail ?? app?.userId ?? '—'}</td>
+                  <td style={cellStyle}>{app?.service ?? '—'}</td>
+                  <td style={cellStyle}>{app?.date ?? '—'} at {app?.time ?? '—'}</td>
                   <td style={cellStyle}>
-                    <button onClick={() => handleDeleteAppointment(app._id)} style={{ color: dangerRed, border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Cancel</button>
+                    <button type="button" onClick={() => handleDeleteAppointment(app?._id)} style={{ color: dangerRed, border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Cancel</button>
                   </td>
                 </tr>
               ))}

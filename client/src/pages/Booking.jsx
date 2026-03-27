@@ -38,12 +38,14 @@ const Booking = () => {
     if (!time) return alert("Please select a time slot");
     if (isClosed) return alert("Clinic is closed on Sundays.");
     
-    const userId = localStorage.getItem('userId');
+    const rawId = localStorage.getItem('userId');
+    const userId =
+      rawId && rawId !== 'undefined' && rawId !== 'null' ? String(rawId).trim() : '';
     const token = localStorage.getItem('token');
 
-    if (!userId || userId === "undefined" || userId === "null") {
-      alert("Session Error: User ID not found. Please log out and log back in.");
-      console.error("The userId in localStorage is:", userId);
+    if (!userId) {
+      alert('Session Error: User ID not found. Please log out and log back in.');
+      console.error('The userId in localStorage is:', rawId);
       return;
     }
 

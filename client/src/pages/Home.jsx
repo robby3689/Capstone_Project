@@ -1,95 +1,124 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React from 'react';
 import { Link } from 'react-router-dom';
 
-const Dashboard = () => {
-  const [appointments, setAppointments] = useState([]);
-  const [myReports, setMyReports] = useState([]); 
-  const [editingId, setEditingId] = useState(null); 
-  const [editData, setEditData] = useState({ date: '', time: '' });
-  
-  const userId = localStorage.getItem('userId');
-  const userName = localStorage.getItem('name');
-  const token = localStorage.getItem('token');
-  const primaryGreen = '#27ae60';
+const Home = () => {
   const darkGreen = '#1b4332';
+  const primaryGreen = '#27ae60';
 
-  const timeSlots = ["09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM"];
-
-  const config = { headers: { Authorization: `Bearer ${token}` } };
-
-  useEffect(() => {
-    if (userId && token) {
-      fetchDashboardData();
-    }
-  }, [userId, token]);
-
-  const fetchDashboardData = async () => {
-    try {
-      // FIX: Clean URLs
-      const appRes = await axios.get(`https://evergreen-clinic-backend.onrender.com/api/appointments/user/${userId}`, config);
-      setAppointments(Array.isArray(appRes.data) ? appRes.data : []);
-      
-      const reportRes = await axios.get(`https://evergreen-clinic-backend.onrender.com/api/reports/patient/${userId}`, config);
-      setMyReports(Array.isArray(reportRes.data) ? reportRes.data : []);
-    } catch (err) {
-      console.error("Fetch Error:", err);
-      setAppointments([]);
-    }
-  };
-
-  const handleReschedule = async (id) => {
-    try {
-      await axios.put(`https://evergreen-clinic-backend.onrender.com/api/appointments/reschedule/${id}`, editData, config);
-      setEditingId(null);
-      fetchDashboardData(); 
-      alert("Success!");
-    } catch (err) { alert("Error updating."); }
-  };
-
-  const handleCancel = async (id) => {
-    if (window.confirm("Cancel this?")) {
-      try {
-        await axios.delete(`https://evergreen-clinic-backend.onrender.com/api/appointments/cancel/${id}`, config);
-        fetchDashboardData();
-      } catch (err) { alert("Failed."); }
-    }
-  };
+  const pillars = [
+    { title: 'Patient-Centered Care', text: 'Every visit is guided by listening first and treating the whole person—not just symptoms.' },
+    { title: 'Clinical Excellence', text: 'Board-certified physicians and modern diagnostics support safer, evidence-based decisions.' },
+    { title: 'Prevention & Wellness', text: 'Screenings, vaccinations, and chronic-care planning help you stay ahead of illness.' },
+    { title: 'Trusted Coordination', text: 'Seamless referrals and clear communication between departments and your care team.' },
+  ];
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '20px', minHeight: '80vh' }}>
-      <div style={{ backgroundColor: darkGreen, color: 'white', padding: '30px', borderRadius: '12px', marginBottom: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h2 style={{ margin: 0 }}>Welcome, {userName || 'Patient'}</h2>
-          <p style={{ margin: '5px 0 0 0', opacity: 0.8 }}>ID: {userId?.substring(0, 8)}</p>
+    <div style={{ minHeight: '85vh' }}>
+      <section
+        style={{
+          position: 'relative',
+          minHeight: '420px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          textAlign: 'center',
+          padding: '60px 24px',
+          backgroundImage:
+            'linear-gradient(105deg, rgba(27, 67, 50, 0.92) 0%, rgba(39, 174, 96, 0.55) 100%), url(https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1920&q=80)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        <div style={{ maxWidth: '720px' }}>
+          <h1 style={{ fontSize: 'clamp(2rem, 4vw, 2.75rem)', margin: '0 0 16px', fontWeight: 800, lineHeight: 1.2 }}>
+            Evergreen Clinic
+          </h1>
+          <p style={{ fontSize: '1.15rem', opacity: 0.95, margin: '0 0 28px', lineHeight: 1.6 }}>
+            Compassionate healthcare in Highbury—where your family&apos;s health grows with you.
+          </p>
+          <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link
+              to="/register"
+              style={{
+                backgroundColor: primaryGreen,
+                color: 'white',
+                padding: '14px 28px',
+                borderRadius: '10px',
+                textDecoration: 'none',
+                fontWeight: 700,
+                fontSize: '16px',
+              }}
+            >
+              Join Us
+            </Link>
+            <Link
+              to="/login"
+              style={{
+                backgroundColor: 'white',
+                color: darkGreen,
+                padding: '14px 28px',
+                borderRadius: '10px',
+                textDecoration: 'none',
+                fontWeight: 700,
+                fontSize: '16px',
+              }}
+            >
+              Patient Login
+            </Link>
+            <Link
+              to="/services"
+              style={{
+                border: '2px solid white',
+                color: 'white',
+                padding: '12px 26px',
+                borderRadius: '10px',
+                textDecoration: 'none',
+                fontWeight: 600,
+                fontSize: '16px',
+              }}
+            >
+              Our Services
+            </Link>
+          </div>
         </div>
-        <Link to="/profile" style={{ backgroundColor: primaryGreen, color: 'white', padding: '10px 20px', borderRadius: '8px', textDecoration: 'none' }}>Profile</Link>
-      </div>
+      </section>
 
-      <h2 style={{ color: darkGreen }}>My Appointments</h2>
-      <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f1f8f5' }}>
-              <th style={{ padding: '15px', textAlign: 'left' }}>Service</th>
-              <th style={{ padding: '15px', textAlign: 'left' }}>Date</th>
-              <th style={{ padding: '15px', textAlign: 'left' }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {appointments.length > 0 ? appointments.map((app) => (
-              <tr key={app._id} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '15px' }}>{app.service}</td>
-                <td style={{ padding: '15px' }}>{app.date} at {app.time}</td>
-                <td style={{ padding: '15px' }}>
-                  <button onClick={() => handleCancel(app._id)} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>Cancel</button>
-                </td>
-              </tr>
-            )) : <tr><td colSpan="3" style={{ padding: '20px', textAlign: 'center' }}>No appointments.</td></tr>}
-          </tbody>
-        </table>
-      </div>
+      <section style={{ backgroundColor: '#f8fbfc', padding: '72px 20px' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+          <h2 style={{ color: darkGreen, textAlign: 'center', fontSize: 'clamp(1.5rem, 3vw, 2rem)', marginBottom: '12px' }}>
+            Our medical pillars
+          </h2>
+          <p style={{ color: '#52796f', textAlign: 'center', maxWidth: '640px', margin: '0 auto 48px', fontSize: '17px', lineHeight: 1.6 }}>
+            These principles shape how we care for every patient who walks through our doors.
+          </p>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+              gap: '24px',
+            }}
+          >
+            {pillars.map((p) => (
+              <div
+                key={p.title}
+                style={{
+                  backgroundColor: 'white',
+                  borderRadius: '14px',
+                  padding: '28px 24px',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
+                  borderTop: `4px solid ${primaryGreen}`,
+                }}
+              >
+                <h3 style={{ color: darkGreen, margin: '0 0 12px', fontSize: '1.15rem' }}>{p.title}</h3>
+                <p style={{ color: '#555', margin: 0, lineHeight: 1.65, fontSize: '15px' }}>{p.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 };
-export default Dashboard;
+
+export default Home;
