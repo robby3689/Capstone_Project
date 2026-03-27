@@ -34,13 +34,14 @@ const Login = () => {
       localStorage.setItem('name', userName);
       localStorage.setItem('role', userRole);
 
+      
       if (userRole === 'admin') {
-        navigate('/admin');
-      } else if (userRole === 'doctor') {
-        navigate('/doctor-dashboard');
-      } else {
-        navigate('/dashboard');
-      }
+  navigate('/admin');
+} else if (userRole === 'doctor' || userRole === 'staff') {
+  navigate('/doctor-dashboard');
+} else {
+  navigate('/dashboard'); 
+}
 
     } catch (err) {
       console.error("Login error details:", err);
