@@ -1,98 +1,108 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import API from '../api';
-import { API_BASE_URL } from '../api';
 
-const Dashboard = () => {
-  const [appointments, setAppointments] = useState([]);
-  const [myReports, setMyReports] = useState([]);
-  const userId = localStorage.getItem('userId');
-  const userName = localStorage.getItem('name');
-  const token = localStorage.getItem('token');
+const AdminDashboard = () => {
+  const [users, setUsers] = useState([]);
+  const [allAppointments, setAllAppointments] = useState([]);
+  const [tab, setTab] = useState('users');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'patient' });
 
-  const fetchDashboardData = useCallback(async () => {
-    if (!userId || !token) return;
-    const config = { headers: { Authorization: `Bearer ${token}` } };
+  const fetchClinicData = useCallback(async () => {
     try {
-      const appRes = await API.get(`/appointments/user/${userId}`, config);
-      setAppointments(Array.isArray(appRes.data) ? appRes.data : []);
-      
-      const reportRes = await API.get(`/reports/patient/${userId}`, config);
-      setMyReports(Array.isArray(reportRes.data) ? reportRes.data : []);
-    } catch (err) { console.error('Fetch Error:', err); }
-  }, [userId, token]);
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const [userRes, appntRes] = await Promise.all([
+        API.get('/auth/all-users', config),
+        API.get('/appointments/all', config)
+      ]);
+      setUsers(userRes.data || []);
+      setAllAppointments(appntRes.data || []);
+    } catch (err) { console.error("Sync Error"); }
+  }, []);
 
-  useEffect(() => { fetchDashboardData(); }, [fetchDashboardData]);
+  useEffect(() => { fetchClinicData(); }, [fetchClinicData]);
 
-  // HELPER: Professional 5-digit ID
   const getShortId = (longId) => {
     if(!longId) return "74563";
     let hash = 0;
-    for (let i = 0; i < longId.length; i++) {
-      hash = longId.charCodeAt(i) + ((hash << 5) - hash);
-    }
+    for (let i = 0; i < longId.length; i++) { hash = longId.charCodeAt(i) + ((hash << 5) - hash); }
     return Math.abs(hash % 90000) + 10000; 
   };
 
-  const handlePatientCancel = async (id) => {
-    if (!window.confirm("Cancel your appointment?")) return;
+  const handleRegisterUser = async (e) => {
+    e.preventDefault();
     try {
-      await API.put(`/appointments/status/${id}`, { status: 'Cancelled' }, { headers: { Authorization: `Bearer ${token}` } });
-      fetchDashboardData();
-    } catch (err) { alert("Failed to cancel."); }
+      await API.post('/auth/register', newUser);
+      setShowAddModal(false);
+      fetchClinicData();
+      alert("User added!");
+    } catch (err) { alert("Failed to add user"); }
   };
 
-  const getReportDownloadUrl = (report) => {
-    const filePath = report?.filePath ?? '';
-    const fileName = filePath.split(/[/\\]/).pop(); 
-    const base = API_BASE_URL.replace('/api', '');
-    return `${base}/uploads/${fileName}`;
-  };
+  const cellStyle = { padding: '15px', borderBottom: '1px solid #eee' };
+  const headerStyle = { backgroundColor: '#f8f9fa', padding: '15px', textAlign: 'left', borderBottom: '2px solid #27ae60' };
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '20px' }}>
-      <div style={{ backgroundColor: '#1b4332', color: 'white', padding: '35px', borderRadius: '15px', marginBottom: '30px' }}>
-        <h2 style={{ margin: 0 }}>Welcome Back, {userName}</h2>
-        <p style={{ marginTop: '10px' }}>Your Official ID: <code>#{getShortId(userId)}</code></p>
+    <div style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 20px' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+        <h1>Admin Control Center</h1>
+        <button onClick={() => setShowAddModal(true)} style={{ backgroundColor: '#27ae60', color: 'white', padding: '12px 24px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>+ Add User</button>
+      </header>
+
+      <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
+        <button onClick={() => setTab('users')} style={{ padding: '10px 20px', backgroundColor: tab === 'users' ? '#1b4332' : '#eee', color: tab === 'users' ? 'white' : '#333', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Users ({users.length})</button>
+        <button onClick={() => setTab('appointments')} style={{ padding: '10px 20px', backgroundColor: tab === 'appointments' ? '#1b4332' : '#eee', color: tab === 'appointments' ? 'white' : '#333', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Master Schedule ({allAppointments.length})</button>
       </div>
 
-      <div style={{ marginBottom: '50px' }}>
-        <h3>My Scheduled Visits</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', marginTop: '15px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f1f8f5' }}>
-              <th style={{ padding: '15px', textAlign: 'left' }}>Service</th>
-              <th style={{ padding: '15px', textAlign: 'left' }}>Date & Time</th>
-              <th style={{ padding: '15px', textAlign: 'left' }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {appointments.map((app) => (
-              <tr key={app._id} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '15px', fontWeight: 'bold' }}>{app.service}</td>
-                <td style={{ padding: '15px' }}>{app.date} at {app.time}</td>
-                <td style={{ padding: '15px' }}>
-                  {app.status === 'Cancelled' ? <span style={{color:'red', fontWeight:'bold'}}>Cancelled</span> : (
-                     <button onClick={() => handlePatientCancel(app._id)} style={{ color: 'red', border: '1px solid red', padding: '6px 12px', background: 'none', cursor: 'pointer', borderRadius: '4px' }}>Cancel Visit</button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+        {tab === 'users' ? (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><th style={headerStyle}>Name</th><th style={headerStyle}>User ID</th><th style={headerStyle}>Role</th></tr>
+            </thead>
+            <tbody>
+              {users.map(u => (
+                <tr key={u._id}><td style={cellStyle}>{u.name}</td><td style={cellStyle}><code>#{getShortId(u._id)}</code></td><td style={cellStyle}>{u.role}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><th style={headerStyle}>Patient</th><th style={headerStyle}>User ID</th><th style={headerStyle}>Service</th><th style={headerStyle}>Date</th><th style={headerStyle}>Status</th></tr>
+            </thead>
+            <tbody>
+              {allAppointments.map(app => (
+                <tr key={app._id}>
+                  <td style={cellStyle}>{app.userId?.name || "Patient"}</td>
+                  <td style={cellStyle}><code>#{getShortId(app.userId?._id)}</code></td>
+                  <td style={cellStyle}>{app.service}</td>
+                  <td style={cellStyle}>{app.date} at {app.time}</td>
+                  <td style={cellStyle}><span style={{color: app.status === 'Cancelled' ? 'red' : '#27ae60', fontWeight: 'bold'}}>{app.status || 'Active'}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
-      <div>
-        <h3>My Prescriptions</h3>
-        <div style={{ display: 'grid', gap: '15px', marginTop: '20px' }}>
-          {myReports.length > 0 ? myReports.map((r) => (
-            <div key={r._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'white', padding: '20px', borderRadius: '10px', border: '1px solid #eee', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-              <div><strong>Prescription from {r.doctorName}</strong></div>
-              <a href={getReportDownloadUrl(r)} target="_blank" rel="noreferrer" style={{ backgroundColor: '#27ae60', color: 'white', padding: '10px 20px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold' }}>VIEW PDF</a>
-            </div>
-          )) : <p style={{color:'#999'}}>No prescriptions available yet.</p>}
+      {showAddModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+          <form onSubmit={handleRegisterUser} style={{ backgroundColor: 'white', padding: '30px', borderRadius: '12px', width: '350px' }}>
+            <h3>New User</h3>
+            <input type="text" placeholder="Name" required style={{ width: '100%', marginBottom: '10px', padding: '8px' }} onChange={e => setNewUser({...newUser, name: e.target.value})} />
+            <input type="email" placeholder="Email" required style={{ width: '100%', marginBottom: '10px', padding: '8px' }} onChange={e => setNewUser({...newUser, email: e.target.value})} />
+            <input type="password" placeholder="Password" required style={{ width: '100%', marginBottom: '10px', padding: '8px' }} onChange={e => setNewUser({...newUser, password: e.target.value})} />
+            <select style={{ width: '100%', marginBottom: '20px', padding: '8px' }} onChange={e => setNewUser({...newUser, role: e.target.value})}>
+              <option value="patient">Patient</option><option value="doctor">Doctor</option><option value="admin">Admin</option>
+            </select>
+            <button type="submit" style={{ width: '100%', backgroundColor: '#27ae60', color: 'white', padding: '10px', border: 'none', borderRadius: '6px' }}>Save</button>
+            <button type="button" onClick={() => setShowAddModal(false)} style={{ width: '100%', marginTop: '10px', background: 'none', border: 'none' }}>Cancel</button>
+          </form>
         </div>
-      </div>
+      )}
     </div>
   );
 };
-export default Dashboard;
+export default AdminDashboard;
