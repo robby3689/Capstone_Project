@@ -1,111 +1,116 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import API from '../api';
 import { API_BASE_URL } from '../api';
 
 const DoctorDashboard = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [appointments, setAppointments] = useState([]);
   const [reports, setReports] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [uploadingId, setUploadingId] = useState(null);
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'appointments');
+  const [activeTab, setActiveTab] = useState('upcoming'); // Default to schedule
 
-  const name = localStorage.getItem('name');
   const token = localStorage.getItem('token');
+  const doctorName = localStorage.getItem('name');
+  const config = { headers: { Authorization: `Bearer ${token}` } };
 
   const fetchDoctorData = useCallback(async () => {
-    const config = { headers: { Authorization: `Bearer ${token}` } };
     try {
-      const [appntRes, reportRes] = await Promise.all([
+      const [appRes, reportRes] = await Promise.all([
         API.get('/appointments/all', config),
-        API.get('/reports/all', config),
+        API.get('/reports/all', config)
       ]);
-      // Explicitly check for array data
-      setAppointments(Array.isArray(appntRes.data) ? appntRes.data : []);
-      setReports(Array.isArray(reportRes.data) ? reportRes.data : []);
-    } catch (err) { console.error('Fetch failed', err); }
+      setAppointments(appRes.data || []);
+      setReports(reportRes.data || []);
+    } catch (err) {
+      console.error("Doctor Data Sync Error");
+    }
   }, [token]);
 
   useEffect(() => { fetchDoctorData(); }, [fetchDoctorData]);
 
-  const getShortId = (longId) => {
-    if(!longId) return "74563";
-    let hash = 0;
-    for (let i = 0; i < longId.length; i++) {
-      hash = longId.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return Math.abs(hash % 90000) + 10000; 
-  };
+  // HELPER: Professional 5-digit ID logic
+  const getShortId = (id) => id ? id.toString().slice(-5).toUpperCase() : "74563";
 
-  const handleUpload = async (userId) => {
-    if (!selectedFile) return alert('Select a PDF file');
+  const handleUpload = async (patientId) => {
+    if (!selectedFile) return alert("Select a PDF prescription first.");
     const formData = new FormData();
     formData.append('report', selectedFile);
-    formData.append('patientId', userId);
-    formData.append('doctorName', name ?? 'Clinic Physician');
+    formData.append('patientId', patientId);
+    formData.append('doctorName', `Dr. ${doctorName}`);
 
-    setUploadingId(userId);
     try {
       await API.post('/reports/upload', formData, {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
+        headers: { ...config.headers, 'Content-Type': 'multipart/form-data' }
       });
-      alert('Prescription Uploaded!');
+      alert("Prescription Uploaded Successfully!");
       fetchDoctorData();
       setSelectedFile(null);
-    } catch { alert('Upload failed.'); }
-    setUploadingId(null);
+    } catch (err) { alert("Upload failed"); }
   };
 
   const getReportUrl = (r) => {
-    const filePath = r?.filePath ?? '';
-    const fileName = filePath.split(/[/\\]/).pop(); 
-    const base = API_BASE_URL.replace('/api', '');
-    return `${base}/uploads/${fileName}`;
+    const fileName = r?.filePath?.split(/[/\\]/).pop(); 
+    return `${API_BASE_URL.replace('/api', '')}/uploads/${fileName}`;
   };
 
+  const headerStyle = { backgroundColor: '#f8f9fa', padding: '15px', textAlign: 'left', borderBottom: '2px solid #3498db', color: '#2c3e50' };
+  const cellStyle = { padding: '15px', borderBottom: '1px solid #eee' };
+
   return (
-    <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
-      <h2>Doctor Portal: Dr. {name}</h2>
-      <div style={{ display: 'flex', gap: '10px', margin: '20px 0' }}>
-        <button onClick={() => setActiveTab('appointments')} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: activeTab === 'appointments' ? '#1b4332' : '#eee', color: activeTab === 'appointments' ? 'white' : '#333', cursor:'pointer' }}>Appointments</button>
-        <button onClick={() => setActiveTab('prescriptions')} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: activeTab === 'prescriptions' ? '#1b4332' : '#eee', color: activeTab === 'prescriptions' ? 'white' : '#333', cursor:'pointer' }}>History</button>
+    <div style={{ maxWidth: '1200px', margin: '40px auto', padding: '20px', fontFamily: 'inherit' }}>
+      <header style={{ marginBottom: '30px' }}>
+        <h1 style={{ color: '#1b4332', margin: 0 }}>Physician Portal</h1>
+        <p style={{ color: '#666' }}>Welcome, Dr. {doctorName} | Managing {appointments.length} Appointments</p>
+      </header>
+
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+        <button onClick={() => setActiveTab('upcoming')} style={{ padding: '12px 24px', backgroundColor: activeTab === 'upcoming' ? '#3498db' : '#eee', color: activeTab === 'upcoming' ? 'white' : '#333', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Upcoming Appointments</button>
+        <button onClick={() => setActiveTab('history')} style={{ padding: '12px 24px', backgroundColor: activeTab === 'history' ? '#3498db' : '#eee', color: activeTab === 'history' ? 'white' : '#333', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Prescription History</button>
       </div>
 
-      <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-        {activeTab === 'appointments' ? (
+      <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
+        {activeTab === 'upcoming' ? (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ backgroundColor: '#f1f8f5' }}><th style={{ padding: '15px', textAlign: 'left' }}>Patient Name</th><th style={{ padding: '15px', textAlign: 'left' }}>User ID</th><th style={{ padding: '15px', textAlign: 'left' }}>Action</th></tr>
+              <tr>
+                <th style={headerStyle}>Patient Name</th>
+                <th style={headerStyle}>User ID</th>
+                <th style={headerStyle}>Appointment Time</th>
+                <th style={headerStyle}>Service</th>
+                <th style={headerStyle}>Digital Rx</th>
+              </tr>
             </thead>
             <tbody>
-              {appointments.length > 0 ? appointments.map((app) => (
-                <tr key={app._id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '15px' }}>{app?.userId?.name || 'Patient'}</td>
-                  <td style={{ padding: '15px' }}><code>#{getShortId(app?.userId?._id)}</code></td>
-                  <td style={{ padding: '15px' }}>
-                    <input type="file" accept=".pdf" onChange={(e) => setSelectedFile(e.target.files[0])} />
-                    <button onClick={() => handleUpload(app?.userId?._id)} style={{ backgroundColor: '#27ae60', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>
-                      {uploadingId === app?.userId?._id ? "Uploading..." : "Upload PDF"}
-                    </button>
+              {appointments.map((app) => (
+                <tr key={app._id}>
+                  <td style={cellStyle}><strong>{app.userId?.name || "Patient"}</strong></td>
+                  <td style={cellStyle}><code>#{getShortId(app.userId?._id)}</code></td>
+                  <td style={cellStyle}>{app.date} at {app.time}</td>
+                  <td style={cellStyle}>{app.service}</td>
+                  <td style={cellStyle}>
+                    <div style={{ display: 'flex', gap: '5px' }}>
+                      <input type="file" accept=".pdf" onChange={(e) => setSelectedFile(e.target.files[0])} style={{ fontSize: '10px', width: '140px' }} />
+                      <button onClick={() => handleUpload(app.userId?._id)} style={{ backgroundColor: '#27ae60', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}>Upload</button>
+                    </div>
                   </td>
                 </tr>
-              )) : (
-                <tr><td colSpan="3" style={{padding:'40px', textAlign:'center', color:'#999'}}>No active appointments found.</td></tr>
-              )}
+              ))}
             </tbody>
           </table>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ backgroundColor: '#f1f8f5' }}><th style={{ padding: '15px', textAlign: 'left' }}>File Name</th><th style={{ padding: '15px', textAlign: 'left' }}>User ID</th><th style={{ padding: '15px', textAlign: 'left' }}>Action</th></tr>
+              <tr>
+                <th style={headerStyle}>File Name</th>
+                <th style={headerStyle}>Patient ID</th>
+                <th style={headerStyle}>Actions</th>
+              </tr>
             </thead>
             <tbody>
               {reports.map((r) => (
-                <tr key={r._id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '15px' }}>{r.fileName}</td>
-                  <td style={{ padding: '15px' }}><code>#{getShortId(r.patientId)}</code></td>
-                  <td style={{ padding: '15px' }}><a href={getReportUrl(r)} target="_blank" rel="noreferrer" style={{color:'#27ae60', fontWeight:'bold'}}>View PDF</a></td>
+                <tr key={r._id}>
+                  <td style={cellStyle}>{r.fileName}</td>
+                  <td style={cellStyle}>#{getShortId(r.patientId)}</td>
+                  <td style={cellStyle}><a href={getReportUrl(r)} target="_blank" rel="noreferrer" style={{ color: '#3498db', fontWeight: 'bold', textDecoration: 'none' }}>View Document</a></td>
                 </tr>
               ))}
             </tbody>
@@ -115,4 +120,5 @@ const DoctorDashboard = () => {
     </div>
   );
 };
+
 export default DoctorDashboard;
