@@ -18,12 +18,12 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const userRole = localStorage.getItem('role');
 
   if (!token) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
 
   if (allowedRoles) {
-    const isAllowed = allowedRoles.some(role => role.toLowerCase() === userRole?.toLowerCase());
-    if (!isAllowed) return <Navigate to="/home" />;
+    const isAllowed = allowedRoles.map(r => r.toLowerCase()).includes(userRole?.toLowerCase());
+    if (!isAllowed) return <Navigate to="/" replace />;
   }
 
   return children;
@@ -35,12 +35,15 @@ function App() {
       <Navbar />
       <div style={{ minHeight: '85vh' }}> 
         <Routes>
+
           <Route path="/" element={<Home />} /> 
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/services" element={<Services />} />
+          <Route path="/services/:type" element={<ServiceDetail />} />
 
-          <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+
+          <Route path="/home" element={<Home />} /> 
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
           <Route path="/dashboard" element={
@@ -66,9 +69,8 @@ function App() {
               <DoctorDashboard />
             </ProtectedRoute>
           } />
-          <Route path="/services/:type" element={<ServiceDetail />} />
 
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
       <Footer /> 
