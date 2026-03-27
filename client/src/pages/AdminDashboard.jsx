@@ -16,23 +16,36 @@ const AdminDashboard = () => {
   const primaryGreen = '#27ae60';
   const dangerRed = '#e74c3c';
 
-  // --- RE-FETCH LOGIC ---
+  // --- THE FIX: TRYING MULTIPLE ENDPOINTS TO BYPASS 404 ---
   const fetchAdminData = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      
-      // We add a random number to the URL to prevent the browser from showing "Old" data
       const nocache = Math.random();
-      const [userRes, appntRes] = await Promise.all([
-        API.get(`/auth/all-users?v=${nocache}`, config),
-        API.get(`/appointments/all?v=${nocache}`, config)
-      ]);
 
-      setUsers(Array.isArray(userRes.data) ? userRes.data : []);
+      // Try fetching appointments first
+      const appntRes = await API.get(`/appointments/all?v=${nocache}`, config);
       setAllAppointments(Array.isArray(appntRes.data) ? appntRes.data : []);
+
+      // TRY ENDPOINT 1: /auth/users (Standard)
+      // TRY ENDPOINT 2: /auth/all-users (What we had)
+      // TRY ENDPOINT 3: /users (Root level)
+      let userRes;
+      try {
+        userRes = await API.get(`/auth/users?v=${nocache}`, config);
+      } catch (e) {
+        try {
+          userRes = await API.get(`/auth/all-users?v=${nocache}`, config);
+        } catch (e2) {
+          userRes = await API.get(`/users?v=${nocache}`, config);
+        }
+      }
+
+      if (userRes && userRes.data) {
+        setUsers(Array.isArray(userRes.data) ? userRes.data : []);
+      }
     } catch (err) {
-      console.error("Admin Data Fetch Failed");
+      console.error("Admin Data Fetch Failed: Check Backend Routes");
     }
   }, []);
 
@@ -54,11 +67,7 @@ const AdminDashboard = () => {
       setShowAddModal(false);
       setNewUser({ name: '', email: '', password: '', role: 'patient' });
       
-      // Wait a tiny bit for the Database to settle, then refresh
-      setTimeout(() => {
-        fetchAdminData();
-      }, 800);
-      
+      setTimeout(() => fetchAdminData(), 800);
     } catch (err) {
       alert(err.response?.data?.msg || "Error adding user");
     }
@@ -73,7 +82,6 @@ const AdminDashboard = () => {
     } catch (err) { alert("Delete failed"); }
   };
 
-  // Logic to filter the users list (Showing EVERYTHING if no search term)
   const filteredUsers = (Array.isArray(users) ? users : []).filter(u => {
     const search = searchTerm.toLowerCase();
     return (u.name || '').toLowerCase().includes(search) || (u.email || '').toLowerCase().includes(search);
@@ -87,18 +95,18 @@ const AdminDashboard = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
         <div>
           <h2 style={{ color: darkGreen, margin: 0 }}>Clinic Administration</h2>
-          <p style={{ color: '#666' }}>Managing {users.length} registered users</p>
+          <p style={{ color: '#666' }}>Connected to Evergreen Backend</p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={fetchAdminData} style={{ backgroundColor: '#eee', border: '1px solid #ddd', padding: '10px', borderRadius: '8px', cursor: 'pointer' }}>🔄 Force Sync</button>
+          <button onClick={fetchAdminData} style={{ backgroundColor: '#eee', border: '1px solid #ddd', padding: '10px', borderRadius: '8px', cursor: 'pointer' }}>🔄 Sync Data</button>
           <button onClick={() => setShowAddModal(true)} style={{ backgroundColor: primaryGreen, color: 'white', padding: '12px 24px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>+ Add New Patient</button>
         </div>
       </div>
 
       <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
-        <button onClick={() => setTab('users')} style={{ padding: '10px 20px', backgroundColor: tab === 'users' ? darkGreen : '#eee', color: tab === 'users' ? 'white' : '#444', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Patients & Staff</button>
-        <button onClick={() => setTab('appointments')} style={{ padding: '10px 20px', backgroundColor: tab === 'appointments' ? darkGreen : '#eee', color: tab === 'appointments' ? 'white' : '#444', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Live Appointments</button>
-        <input type="text" placeholder="Search by name..." style={{ marginLeft: 'auto', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', width: '250px' }} onChange={(e) => setSearchTerm(e.target.value)} />
+        <button onClick={() => setTab('users')} style={{ padding: '10px 20px', backgroundColor: tab === 'users' ? darkGreen : '#eee', color: tab === 'users' ? 'white' : '#444', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Users List ({users.length})</button>
+        <button onClick={() => setTab('appointments')} style={{ padding: '10px 20px', backgroundColor: tab === 'appointments' ? darkGreen : '#eee', color: tab === 'appointments' ? 'white' : '#444', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Live Appointments ({allAppointments.length})</button>
+        <input type="text" placeholder="Search..." style={{ marginLeft: 'auto', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', width: '250px' }} onChange={(e) => setSearchTerm(e.target.value)} />
       </div>
 
       <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
@@ -126,7 +134,7 @@ const AdminDashboard = () => {
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan="3" style={{ padding: '40px', textAlign: 'center', color: '#999' }}>No users found in database.</td></tr>
+                <tr><td colSpan="3" style={{ padding: '40px', textAlign: 'center', color: '#999' }}>No users found. Ensure backend route is correct.</td></tr>
               )}
             </tbody>
           </table>
@@ -156,26 +164,14 @@ const AdminDashboard = () => {
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
           <form onSubmit={handleAddUser} style={{ backgroundColor: 'white', padding: '30px', borderRadius: '12px', width: '380px', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
             <h3 style={{ marginTop: 0, color: darkGreen }}>Register New Patient</h3>
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 'bold' }}>Full Name</label>
-              <input type="text" required style={{ width: '100%', padding: '10px', marginTop: '5px', boxSizing: 'border-box' }} onChange={e => setNewUser({...newUser, name: e.target.value})} />
-            </div>
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 'bold' }}>Email Address</label>
-              <input type="email" required style={{ width: '100%', padding: '10px', marginTop: '5px', boxSizing: 'border-box' }} onChange={e => setNewUser({...newUser, email: e.target.value})} />
-            </div>
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 'bold' }}>Password</label>
-              <input type="password" required style={{ width: '100%', padding: '10px', marginTop: '5px', boxSizing: 'border-box' }} onChange={e => setNewUser({...newUser, password: e.target.value})} />
-            </div>
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 'bold' }}>Assign Role</label>
-              <select style={{ width: '100%', padding: '10px', marginTop: '5px' }} onChange={e => setNewUser({...newUser, role: e.target.value})}>
+            <input type="text" placeholder="Full Name" required style={{ width: '100%', padding: '10px', marginBottom: '10px', boxSizing: 'border-box' }} onChange={e => setNewUser({...newUser, name: e.target.value})} />
+            <input type="email" placeholder="Email" required style={{ width: '100%', padding: '10px', marginBottom: '10px', boxSizing: 'border-box' }} onChange={e => setNewUser({...newUser, email: e.target.value})} />
+            <input type="password" placeholder="Password" required style={{ width: '100%', padding: '10px', marginBottom: '10px', boxSizing: 'border-box' }} onChange={e => setNewUser({...newUser, password: e.target.value})} />
+            <select style={{ width: '100%', padding: '10px', marginBottom: '20px' }} onChange={e => setNewUser({...newUser, role: e.target.value})}>
                 <option value="patient">Patient</option>
                 <option value="doctor">Doctor</option>
                 <option value="admin">Admin</option>
-              </select>
-            </div>
+            </select>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button type="submit" style={{ flex: 1, padding: '12px', backgroundColor: primaryGreen, color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>Register</button>
               <button type="button" onClick={() => setShowAddModal(false)} style={{ flex: 1, padding: '12px', backgroundColor: '#eee', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Cancel</button>
