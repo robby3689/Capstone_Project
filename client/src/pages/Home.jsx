@@ -4,6 +4,9 @@ import { Link } from 'react-router-dom';
 const Home = () => {
   const darkGreen = '#1b4332';
   const primaryGreen = '#27ae60';
+  
+  // LOGIC: Check if user is logged in
+  const isLoggedIn = !!localStorage.getItem('token');
 
   const pillars = [
     { title: 'Patient-Centered Care', text: 'Every visit is guided by listening first and treating the whole person—not just symptoms.' },
@@ -14,7 +17,6 @@ const Home = () => {
 
   return (
     <div style={{ minHeight: '85vh', fontFamily: 'Arial, sans-serif' }}>
-      {/* Hero Section */}
       <section
         style={{
           position: 'relative',
@@ -39,13 +41,18 @@ const Home = () => {
             From emergency response to long-term wellness, we are your partners in health.
           </p>
           <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/register" style={{ backgroundColor: primaryGreen, color: 'white', padding: '16px 32px', borderRadius: '30px', textDecoration: 'none', fontWeight: 700 }}>Start Your Journey</Link>
-            <Link to="/services" style={{ border: '2px solid white', color: 'white', padding: '14px 30px', borderRadius: '30px', textDecoration: 'none', fontWeight: 600 }}>Explore Services</Link>
+            {/* FIX: Conditional Link */}
+            {isLoggedIn ? (
+               <Link to="/dashboard" style={{ backgroundColor: primaryGreen, color: 'white', padding: '16px 32px', borderRadius: '30px', textDecoration: 'none', fontWeight: 700 }}>Go to Dashboard</Link>
+            ) : (
+               <Link to="/register" style={{ backgroundColor: primaryGreen, color: 'white', padding: '16px 32px', borderRadius: '30px', textDecoration: 'none', fontWeight: 700 }}>Start Your Journey</Link>
+            )}
+            <Link to="/services" style={{ border: '2px solid white', color: 'white', padding: '14px 30px', borderRadius: '30px', textDecoration: 'none', fontWeight: 600 }}>Our Services</Link>
           </div>
         </div>
       </section>
 
-      {/* NEW: Long Info Section */}
+      {/* Info Section */}
       <section style={{ padding: '80px 20px', backgroundColor: 'white' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '50px', alignItems: 'center' }}>
           <div>
@@ -53,14 +60,9 @@ const Home = () => {
             <p style={{ lineHeight: '1.8', color: '#444', fontSize: '17px' }}>
               Evergreen Clinic has been serving the community for over two decades. We believe that technology should enhance the human touch, not replace it. Our facility integrates digital health records with face-to-face expertise.
             </p>
-            <ul style={{ listStyle: 'none', padding: 0, marginTop: '20px' }}>
-              {['✓ 24/7 Virtual Consultation', '✓ Advanced Imaging Suite', '✓ On-site Pharmacy'].map(item => (
-                <li key={item} style={{ marginBottom: '10px', color: primaryGreen, fontWeight: 'bold' }}>{item}</li>
-              ))}
-            </ul>
           </div>
           <div style={{ borderRadius: '20px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
-            <img src="https://images.unsplash.com/photo-1586773860418-d37222d8fce2?auto=format&fit=crop&w=800&q=80" alt="Clinic" style={{ width: '100%', display: 'block' }} />
+            <img src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=80" alt="Clinic Interior" style={{ width: '100%', display: 'block' }} />
           </div>
         </div>
       </section>
