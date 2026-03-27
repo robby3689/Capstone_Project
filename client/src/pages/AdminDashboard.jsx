@@ -16,85 +16,130 @@ const AdminDashboard = () => {
   const primaryGreen = '#27ae60';
   const dangerRed = '#e74c3c';
 
-  useEffect(() => { fetchAdminData(); }, []);
+  useEffect(() => { 
+    fetchAdminData(); 
+  }, []);
 
   const fetchAdminData = async () => {
     try {
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
+      
+      // Use Promise.all to fetch everything at once
       const [userRes, appntRes] = await Promise.all([
         API.get('/auth/all-users', config),
         API.get('/appointments/all', config)
       ]);
+
+      console.log("Admin Users Loaded:", userRes.data); // Debug to see what the server sends
       setUsers(Array.isArray(userRes.data) ? userRes.data : []);
       setAllAppointments(Array.isArray(appntRes.data) ? appntRes.data : []);
-    } catch (err) { console.error("Fetch failed"); }
+    } catch (err) { 
+      console.error("Fetch failed", err); 
+    }
   };
 
   const handleAddUser = async (e) => {
     e.preventDefault();
     try {
-      await API.post('/auth/register', newUser);
-      alert("User added!");
+      // FORCE LOWERCASE ROLE BEFORE SENDING
+      const payload = {
+        ...newUser,
+        role: newUser.role.toLowerCase().trim()
+      };
+      
+      await API.post('/auth/register', payload);
+      
+      alert("User added successfully!");
       setShowAddModal(false);
-      fetchAdminData();
-    } catch (err) { alert("Failed to add user"); }
-  };
-
-  const handleDeleteUser = async (id) => {
-    if (window.confirm("Delete user?")) {
-      try {
-        await API.delete(`/auth/user/${id}`);
-        fetchAdminData();
-      } catch (err) { alert("Delete failed"); }
+      setNewUser({ name: '', email: '', password: '', role: 'patient' });
+      
+      // CRITICAL: Re-fetch data immediately to show the new user
+      await fetchAdminData(); 
+    } catch (err) { 
+      alert(err.response?.data?.msg || "Failed to add user"); 
     }
   };
 
-  const filteredUsers = users.filter(u => 
-    u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    u.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // FIX: Case-insensitive filtering
+  const filteredUsers = (Array.isArray(users) ? users : []).filter(u => {
+    const nameMatch = (u.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const emailMatch = (u.email || '').toLowerCase().includes(searchTerm.toLowerCase());
+    return nameMatch || emailMatch;
+  });
 
-  const tableHeaderStyle = { backgroundColor: '#f1f8f5', color: darkGreen, padding: '15px', textAlign: 'left' };
+  const tableHeaderStyle = { backgroundColor: '#f1f8f5', color: darkGreen, padding: '15px', textAlign: 'left', borderBottom: `2px solid ${primaryGreen}` };
   const cellStyle = { padding: '15px', borderBottom: '1px solid #eee' };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 20px' }}>
+    <div style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 20px', minHeight: '80vh' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
         <h2>Clinic Administration</h2>
-        <button onClick={() => setShowAddModal(true)} style={{ backgroundColor: primaryGreen, color: 'white', padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>+ Add User</button>
+        <button onClick={() => setShowAddModal(true)} style={{ backgroundColor: primaryGreen, color: 'white', padding: '12px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
+          + Add New User
+        </button>
       </div>
 
-      <div style={{ marginBottom: '20px' }}>
-        <button onClick={() => setTab('appointments')} style={{ marginRight: '10px', padding: '10px', backgroundColor: tab === 'appointments' ? darkGreen : '#eee', color: tab === 'appointments' ? 'white' : '#000' }}>Appointments</button>
-        <button onClick={() => setTab('users')} style={{ padding: '10px', backgroundColor: tab === 'users' ? darkGreen : '#eee', color: tab === 'users' ? 'white' : '#000' }}>Users</button>
+      <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+        <button onClick={() => setTab('appointments')} style={{ padding: '10px 20px', backgroundColor: tab === 'appointments' ? darkGreen : '#eee', color: tab === 'appointments' ? 'white' : '#444', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Appointments</button>
+        <button onClick={() => setTab('users')} style={{ padding: '10px 20px', backgroundColor: tab === 'users' ? darkGreen : '#eee', color: tab === 'users' ? 'white' : '#444', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Users</button>
+        {tab === 'users' && (
+           <input 
+             type="text" 
+             placeholder="Search name or email..." 
+             style={{ marginLeft: 'auto', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} 
+             onChange={(e) => setSearchTerm(e.target.value)} 
+           />
+        )}
       </div>
 
-      <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+      <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
         {tab === 'appointments' ? (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead><tr><th style={tableHeaderStyle}>Patient</th><th style={tableHeaderStyle}>Service</th><th style={tableHeaderStyle}>Date</th><th style={tableHeaderStyle}>Action</th></tr></thead>
+            <thead>
+              <tr>
+                <th style={tableHeaderStyle}>Patient</th>
+                <th style={tableHeaderStyle}>Service</th>
+                <th style={tableHeaderStyle}>Date</th>
+                <th style={tableHeaderStyle}>Action</th>
+              </tr>
+            </thead>
             <tbody>
               {allAppointments.map(app => (
                 <tr key={app._id}>
                   <td style={cellStyle}>{app.userId?.name || app.userEmail || "Patient"}</td>
                   <td style={cellStyle}>{app.service}</td>
                   <td style={cellStyle}>{app.date} at {app.time}</td>
-                  <td style={cellStyle}><button onClick={() => handleDeleteUser(app._id)} style={{ color: dangerRed, border: 'none', background: 'none' }}>Cancel</button></td>
+                  <td style={cellStyle}>
+                    <button onClick={() => handleDeleteUser(app._id)} style={{ color: dangerRed, border: 'none', background: 'none', cursor: 'pointer' }}>Cancel</button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead><tr><th style={tableHeaderStyle}>Name</th><th style={tableHeaderStyle}>Email</th><th style={tableHeaderStyle}>Role</th><th style={tableHeaderStyle}>Action</th></tr></thead>
+            <thead>
+              <tr>
+                <th style={tableHeaderStyle}>Name</th>
+                <th style={tableHeaderStyle}>Email</th>
+                <th style={tableHeaderStyle}>Role</th>
+                <th style={tableHeaderStyle}>Action</th>
+              </tr>
+            </thead>
             <tbody>
               {filteredUsers.map(user => (
                 <tr key={user._id}>
                   <td style={cellStyle}>{user.name}</td>
                   <td style={cellStyle}>{user.email}</td>
-                  <td style={cellStyle}>{user.role}</td>
-                  <td style={cellStyle}><button onClick={() => handleDeleteUser(user._id)} style={{ color: dangerRed, border: 'none', background: 'none' }}>Delete</button></td>
+                  <td style={cellStyle}>
+                    <span style={{ backgroundColor: '#eee', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', textTransform: 'capitalize' }}>
+                      {user.role}
+                    </span>
+                  </td>
+                  <td style={cellStyle}>
+                    <button onClick={() => handleDeleteUser(user._id)} style={{ color: dangerRed, border: 'none', background: 'none', cursor: 'pointer' }}>Delete</button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -103,19 +148,29 @@ const AdminDashboard = () => {
       </div>
 
       {showAddModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
           <form onSubmit={handleAddUser} style={{ backgroundColor: 'white', padding: '30px', borderRadius: '12px', width: '400px' }}>
-            <h3>Add New User</h3>
-            <input type="text" placeholder="Name" required style={{ width: '100%', marginBottom: '10px', padding: '10px' }} onChange={e => setNewUser({...newUser, name: e.target.value})} />
-            <input type="email" placeholder="Email" required style={{ width: '100%', marginBottom: '10px', padding: '10px' }} onChange={e => setNewUser({...newUser, email: e.target.value})} />
-            <input type="password" placeholder="Password" required style={{ width: '100%', marginBottom: '10px', padding: '10px' }} onChange={e => setNewUser({...newUser, password: e.target.value})} />
+            <h3 style={{ marginTop: 0 }}>Add New User</h3>
+            <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Full Name</label>
+            <input type="text" required style={{ width: '100%', marginBottom: '15px', padding: '10px', boxSizing: 'border-box' }} onChange={e => setNewUser({...newUser, name: e.target.value})} />
+            
+            <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Email Address</label>
+            <input type="email" required style={{ width: '100%', marginBottom: '15px', padding: '10px', boxSizing: 'border-box' }} onChange={e => setNewUser({...newUser, email: e.target.value})} />
+            
+            <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Password</label>
+            <input type="password" required style={{ width: '100%', marginBottom: '15px', padding: '10px', boxSizing: 'border-box' }} onChange={e => setNewUser({...newUser, password: e.target.value})} />
+            
+            <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Role</label>
             <select style={{ width: '100%', marginBottom: '20px', padding: '10px' }} onChange={e => setNewUser({...newUser, role: e.target.value})}>
               <option value="patient">Patient</option>
               <option value="doctor">Doctor</option>
               <option value="admin">Admin</option>
             </select>
-            <button type="submit" style={{ width: '100%', padding: '10px', backgroundColor: primaryGreen, color: 'white', border: 'none' }}>Save</button>
-            <button type="button" onClick={() => setShowAddModal(false)} style={{ width: '100%', marginTop: '10px', background: 'none', border: 'none' }}>Cancel</button>
+            
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="submit" style={{ flex: 1, padding: '12px', backgroundColor: primaryGreen, color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Save User</button>
+              <button type="button" onClick={() => setShowAddModal(false)} style={{ flex: 1, padding: '12px', backgroundColor: '#eee', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Cancel</button>
+            </div>
           </form>
         </div>
       )}
