@@ -35,38 +35,37 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} /> 
           <Route path="/home" element={<Home />} /> 
-          <Route path="/services" element={<Services />} />
-          <Route path="/services/:type" element={<ServiceDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/services/:type" element={<ServiceDetail />} />
 
           <Route path="/dashboard" element={
-            <ProtectedRoute allowedRoles={['Patient', 'User', 'patient', 'user']}>
+            <ProtectedRoute allowedRoles={['patient', 'user']}>
               <Dashboard />
             </ProtectedRoute>
           } />
           
           <Route path="/book" element={
-            <ProtectedRoute allowedRoles={['Patient', 'User', 'patient', 'user']}>
+            <ProtectedRoute allowedRoles={['patient', 'user']}>
               <Booking />
             </ProtectedRoute>
           } />
 
-          <Route path="/admin" element={
-            <ProtectedRoute allowedRoles={['Admin', 'admin']}>
-              <AdminDashboard />
+          <Route path="/doctor-dashboard" element={
+            <ProtectedRoute allowedRoles={['doctor', 'staff']}>
+              <DoctorDashboard />
             </ProtectedRoute>
           } />
 
-          <Route path="/doctor-dashboard" element={
-            <ProtectedRoute allowedRoles={['Doctor', 'Staff', 'doctor', 'staff']}>
-              <DoctorDashboard />
+          <Route path="/admin" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminDashboard />
             </ProtectedRoute>
           } />
 
           <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

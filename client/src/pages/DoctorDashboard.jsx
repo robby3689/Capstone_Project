@@ -1,70 +1,89 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 
-const Navbar = () => {
-  const navigate = useNavigate();
+const DoctorDashboard = () => {
+  const [appointments, setAppointments] = useState([]);
+  const [reports, setReports] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  
+  const name = localStorage.getItem('name');
   const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role')?.toLowerCase();
-  const [showDropdown, setShowDropdown] = useState(false);
+  const primaryGreen = '#27ae60';
+  const darkGreen = '#1b4332';
+  const dangerRed = '#e74c3c';
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/login');
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+
+  useEffect(() => {
+    fetchDoctorData();
+  }, []);
+
+  const fetchDoctorData = async () => {
+    try {
+      const appntRes = await axios.get('https://evergreen-clinic-backend.onrender.com/api/appointments/all', config);
+      const reportRes = await axios.get('https://evergreen-clinic-backend.onrender.com/api/reports/all', config);
+      setAppointments(Array.isArray(appntRes.data) ? appntRes.data : []);
+      setReports(Array.isArray(reportRes.data) ? reportRes.data : []);
+    } catch (err) { console.error("Fetch failed", err); }
   };
 
-  const navStyle = { display: 'flex', justifyContent: 'space-between', padding: '15px 60px', backgroundColor: '#ffffff', borderBottom: '1px solid #eee', alignItems: 'center', position: 'sticky', top: '0', zIndex: '1000' };
-  const linkStyle = { color: '#444', textDecoration: 'none', marginLeft: '25px', fontSize: '15px', fontWeight: '500', cursor: 'pointer' };
-  const dropdownStyle = { position: 'absolute', top: '100%', left: '0', backgroundColor: 'white', boxShadow: '0 8px 16px rgba(0,0,0,0.1)', borderRadius: '8px', padding: '10px 0', minWidth: '200px', display: showDropdown ? 'block' : 'none', zIndex: '1001', border: '1px solid #eee' };
-  const dropdownItemStyle = { padding: '10px 20px', textDecoration: 'none', color: '#444', display: 'block', fontSize: '14px' };
-  const emergencyBtn = { backgroundColor: '#e74c3c', color: 'white', padding: '10px 20px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px' };
+  const handleUpload = async (app) => {
+    const patientId = app.userId?._id || app.userId; 
+    if (!selectedFile) return alert("Select a PDF file");
+    const formData = new FormData();
+    formData.append('report', selectedFile); 
+    formData.append('patientId', patientId);
+    formData.append('doctorName', name);
+
+    setUploading(true);
+    try {
+      await axios.post('https://evergreen-clinic-backend.onrender.com/api/reports/upload', formData, {
+        headers: { ...config.headers, 'Content-Type': 'multipart/form-data' }
+      });
+      alert("Success!");
+      fetchDoctorData();
+    } catch (err) { alert("Failed."); }
+    setUploading(false);
+  };
+
+  const deleteAppointment = async (id) => {
+    if (window.confirm("Delete?")) {
+      try {
+        await axios.delete(`https://evergreen-clinic-backend.onrender.com/api/appointments/cancel/${id}`, config);
+        setAppointments(appointments.filter(a => a._id !== id));
+      } catch (err) { alert("Failed."); }
+    }
+  };
 
   return (
-    <nav style={navStyle}>
-      <Link to="/" style={{ fontSize: '24px', fontWeight: '800', color: '#1b4332', textDecoration: 'none' }}>
-        <span style={{ color: '#27ae60' }}>Evergreen</span> Clinic
-      </Link>
-
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <a href="tel:911" style={emergencyBtn}>EMERGENCY 24/7</a>
-
-        <div style={{ position: 'relative', marginLeft: '25px' }} onMouseEnter={() => setShowDropdown(true)} onMouseLeave={() => setShowDropdown(false)}>
-          <span style={linkStyle} onClick={() => navigate('/services')}>Services</span>
-          <div style={dropdownStyle}>
-            <Link to="/services/emergency" style={dropdownItemStyle}>Emergency Care</Link>
-            <Link to="/services/pediatrics" style={dropdownItemStyle}>Pediatrics</Link>
-            <Link to="/services/diagnostics" style={dropdownItemStyle}>Diagnostics & Lab</Link>
-          </div>
-        </div>
-
-        {token ? (
-          <>
-            <Link style={linkStyle} to="/">Home</Link>
-
-            {role === 'admin' && (
-              <Link style={{ ...linkStyle, color: '#f39c12', fontWeight: 'bold' }} to="/admin">Admin Panel</Link>
-            )}
-            
-            {(role === 'doctor' || role === 'staff') && (
-              <Link style={{ ...linkStyle, color: '#3498db', fontWeight: 'bold' }} to="/doctor-dashboard">Doctor Panel</Link>
-            )}
-
-            {(role === 'patient' || role === 'user') && (
-              <Link style={linkStyle} to="/dashboard">My Health</Link>
-            )}
-
-            <button onClick={handleLogout} style={{ marginLeft: '25px', padding: '8px 18px', backgroundColor: 'transparent', color: '#e74c3c', border: '1px solid #e74c3c', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>
-              Logout
-            </button>
-          </>
-        ) : (
-          <>
-            <Link style={linkStyle} to="/login">Login</Link>
-            <Link style={{ ...linkStyle, padding: '10px 22px', backgroundColor: '#27ae60', color: 'white', borderRadius: '6px' }} to="/register">Join Us</Link>
-          </>
-        )}
+    <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
+      <h2 style={{ color: darkGreen }}>Clinical Portal: Dr. {name}</h2>
+      <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ backgroundColor: '#f1f8f5' }}>
+              <th style={{ padding: '15px', textAlign: 'left' }}>Patient Name</th>
+              <th style={{ padding: '15px', textAlign: 'left' }}>Service</th>
+              <th style={{ padding: '15px', textAlign: 'left' }}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {appointments.map(app => (
+              <tr key={app._id} style={{ borderBottom: '1px solid #eee' }}>
+                <td style={{ padding: '15px' }}>{app.userId?.name || "Patient"}</td>
+                <td style={{ padding: '15px' }}>{app.service}</td>
+                <td style={{ padding: '15px' }}>
+                   <input type="file" accept=".pdf" onChange={(e) => setSelectedFile(e.target.files[0])} />
+                   <button onClick={() => handleUpload(app)} style={{ backgroundColor: primaryGreen, color: 'white', padding: '5px' }}>Upload</button>
+                   <button onClick={() => deleteAppointment(app._id)} style={{ color: dangerRed, marginLeft: '10px' }}>Cancel</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-    </nav>
+    </div>
   );
 };
-
-export default Navbar;
+export default DoctorDashboard;
