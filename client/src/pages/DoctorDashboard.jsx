@@ -1,139 +1,70 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
-const DoctorDashboard = () => {
-  const [appointments, setAppointments] = useState([]);
-  const [reports, setReports] = useState([]);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  
-  const name = localStorage.getItem('name');
+const Navbar = () => {
+  const navigate = useNavigate();
   const token = localStorage.getItem('token');
-  const primaryGreen = '#27ae60';
-  const darkGreen = '#1b4332';
-  const dangerRed = '#e74c3c';
+  const role = localStorage.getItem('role')?.toLowerCase();
+  const [showDropdown, setShowDropdown] = useState(false);
 
-  const config = { headers: { Authorization: `Bearer ${token}` } };
-
-  useEffect(() => {
-    fetchDoctorData();
-  }, []);
-
-  const fetchDoctorData = async () => {
-    try {
-      const appntRes = await axios.get('[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/appointments/all', config);
-      const reportRes = await axios.get('[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/reports/all', config);
-      setAppointments(appntRes.data);
-      setReports(reportRes.data);
-    } catch (err) { console.error("Fetch failed", err); }
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate('/login');
   };
 
-  const handleUpload = async (app) => {
-    const patientId = app.userId?._id || app.userId; 
-    if (!selectedFile) return alert("Please select a PDF file first");
-    if (!patientId) return alert("Error: This appointment has no valid Patient ID.");
-
-    const formData = new FormData();
-    formData.append('report', selectedFile); 
-    formData.append('patientId', patientId);
-    formData.append('doctorName', name);
-
-    setUploading(true);
-    try {
-      await axios.post('[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/reports/upload', formData, {
-        headers: { ...config.headers, 'Content-Type': 'multipart/form-data' }
-      });
-      alert("Upload Successful!");
-      setSelectedFile(null);
-      fetchDoctorData();
-    } catch (err) { alert("Upload failed."); }
-    setUploading(false);
-  };
-
-  const deleteAppointment = async (id) => {
-    if (window.confirm("Are you sure you want to delete this appointment?")) {
-      try {
-        await axios.delete(`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/appointments/cancel/${id}`, config);
-        setAppointments(appointments.filter(app => app._id !== id));
-        alert("Appointment deleted.");
-      } catch (err) { alert("Failed to delete appointment."); }
-    }
-  };
-
-  const deleteReport = async (id) => {
-    if (window.confirm("Delete this medical record permanently?")) {
-      try {
-        await axios.delete(`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/api/reports/${id}`, config);
-        setReports(reports.filter(r => r._id !== id));
-        alert("Report deleted.");
-      } catch (err) { alert("Delete failed."); }
-    }
-  };
-
-  const tableHeaderStyle = { backgroundColor: '#f1f8f5', color: darkGreen, padding: '15px', textAlign: 'left', borderBottom: `2px solid ${primaryGreen}` };
-  const cellStyle = { padding: '15px', borderBottom: '1px solid #eee', fontSize: '14px' };
+  const navStyle = { display: 'flex', justifyContent: 'space-between', padding: '15px 60px', backgroundColor: '#ffffff', borderBottom: '1px solid #eee', alignItems: 'center', position: 'sticky', top: '0', zIndex: '1000' };
+  const linkStyle = { color: '#444', textDecoration: 'none', marginLeft: '25px', fontSize: '15px', fontWeight: '500', cursor: 'pointer' };
+  const dropdownStyle = { position: 'absolute', top: '100%', left: '0', backgroundColor: 'white', boxShadow: '0 8px 16px rgba(0,0,0,0.1)', borderRadius: '8px', padding: '10px 0', minWidth: '200px', display: showDropdown ? 'block' : 'none', zIndex: '1001', border: '1px solid #eee' };
+  const dropdownItemStyle = { padding: '10px 20px', textDecoration: 'none', color: '#444', display: 'block', fontSize: '14px' };
+  const emergencyBtn = { backgroundColor: '#e74c3c', color: 'white', padding: '10px 20px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px' };
 
   return (
-    <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto', minHeight: '90vh' }}>
-      <h2 style={{ color: darkGreen }}>Clinical Portal: Dr. {name}</h2>
-      
-      <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', overflow: 'hidden', marginBottom: '40px' }}>
-        <h3 style={{ padding: '20px', margin: 0, color: darkGreen }}>Upcoming Consultations</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={tableHeaderStyle}>Patient Name</th>
-              <th style={tableHeaderStyle}>Service</th>
-              <th style={tableHeaderStyle}>Date/Time</th>
-              <th style={tableHeaderStyle}>Upload PDF</th>
-              <th style={tableHeaderStyle}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {appointments.map(app => (
-              <tr key={app._id}>
-                <td style={cellStyle}><strong>{app.userId?.name || "Patient"}</strong></td>
-                <td style={cellStyle}>{app.service}</td>
-                <td style={cellStyle}>{app.date} @ {app.time}</td>
-                <td style={cellStyle}>
-                  <input type="file" accept=".pdf" onChange={(e) => setSelectedFile(e.target.files[0])} style={{ fontSize: '11px' }} />
-                  <button onClick={() => handleUpload(app)} disabled={uploading} style={{ backgroundColor: primaryGreen, color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>Upload</button>
-                </td>
-                <td style={cellStyle}>
-                  <button onClick={() => deleteAppointment(app._id)} style={{ color: dangerRed, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Cancel Appt</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <nav style={navStyle}>
+      <Link to="/" style={{ fontSize: '24px', fontWeight: '800', color: '#1b4332', textDecoration: 'none' }}>
+        <span style={{ color: '#27ae60' }}>Evergreen</span> Clinic
+      </Link>
 
-      <div style={{ backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-        <h3 style={{ padding: '20px', margin: 0, color: darkGreen }}>Manage Uploaded Reports</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={tableHeaderStyle}>File Name</th>
-              <th style={tableHeaderStyle}>Uploaded Date</th>
-              <th style={tableHeaderStyle}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reports.map(report => (
-              <tr key={report._id}>
-                <td style={cellStyle}>{report.fileName}</td>
-                <td style={cellStyle}>{new Date(report.createdAt).toLocaleDateString()}</td>
-                <td style={cellStyle}>
-                  <a href={`[https://evergreen-clinic-backend.onrender.com](https://evergreen-clinic-backend.onrender.com)/${report.filePath}`} target="_blank" rel="noreferrer" style={{ color: primaryGreen, marginRight: '15px', fontWeight: 'bold', textDecoration: 'none' }}>Download</a>
-                  <button onClick={() => deleteReport(report._id)} style={{ color: dangerRed, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <a href="tel:911" style={emergencyBtn}>EMERGENCY 24/7</a>
+
+        <div style={{ position: 'relative', marginLeft: '25px' }} onMouseEnter={() => setShowDropdown(true)} onMouseLeave={() => setShowDropdown(false)}>
+          <span style={linkStyle} onClick={() => navigate('/services')}>Services</span>
+          <div style={dropdownStyle}>
+            <Link to="/services/emergency" style={dropdownItemStyle}>Emergency Care</Link>
+            <Link to="/services/pediatrics" style={dropdownItemStyle}>Pediatrics</Link>
+            <Link to="/services/diagnostics" style={dropdownItemStyle}>Diagnostics & Lab</Link>
+          </div>
+        </div>
+
+        {token ? (
+          <>
+            <Link style={linkStyle} to="/">Home</Link>
+
+            {role === 'admin' && (
+              <Link style={{ ...linkStyle, color: '#f39c12', fontWeight: 'bold' }} to="/admin">Admin Panel</Link>
+            )}
+            
+            {(role === 'doctor' || role === 'staff') && (
+              <Link style={{ ...linkStyle, color: '#3498db', fontWeight: 'bold' }} to="/doctor-dashboard">Doctor Panel</Link>
+            )}
+
+            {(role === 'patient' || role === 'user') && (
+              <Link style={linkStyle} to="/dashboard">My Health</Link>
+            )}
+
+            <button onClick={handleLogout} style={{ marginLeft: '25px', padding: '8px 18px', backgroundColor: 'transparent', color: '#e74c3c', border: '1px solid #e74c3c', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>
+              Logout
+            </button>
+          </>
+        ) : (
+          <>
+            <Link style={linkStyle} to="/login">Login</Link>
+            <Link style={{ ...linkStyle, padding: '10px 22px', backgroundColor: '#27ae60', color: 'white', borderRadius: '6px' }} to="/register">Join Us</Link>
+          </>
+        )}
       </div>
-    </div>
+    </nav>
   );
 };
 
-export default DoctorDashboard;
+export default Navbar;
