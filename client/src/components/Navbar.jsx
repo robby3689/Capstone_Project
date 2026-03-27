@@ -47,6 +47,7 @@ const Navbar = () => {
                 <Link style={linkStyle} to="/book">Book Appointment</Link>
               </>
             )}
+            
             <Link style={linkStyle} to="/profile">Profile</Link>
             <button onClick={handleLogout} style={{ marginLeft: '25px', padding: '8px 18px', backgroundColor: 'transparent', color: '#e74c3c', border: '1px solid #e74c3c', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>Logout</button>
           </>
@@ -60,4 +61,5 @@ const Navbar = () => {
     </nav>
   );
 };
+
 export default Navbar;
