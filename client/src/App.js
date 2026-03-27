@@ -21,7 +21,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   if (!token) return <Navigate to="/login" replace />;
 
   if (allowedRoles) {
-
     const isAllowed = allowedRoles.some(r => r.toLowerCase() === userRole?.toLowerCase());
     if (!isAllowed) return <Navigate to="/" replace />;
   }
@@ -36,10 +35,10 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} /> 
           <Route path="/home" element={<Home />} /> 
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
           <Route path="/services" element={<Services />} />
           <Route path="/services/:type" element={<ServiceDetail />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
           <Route path="/dashboard" element={
             <ProtectedRoute allowedRoles={['Patient', 'User', 'patient', 'user']}>
@@ -58,7 +57,7 @@ function App() {
               <AdminDashboard />
             </ProtectedRoute>
           } />
-          
+
           <Route path="/doctor-dashboard" element={
             <ProtectedRoute allowedRoles={['Doctor', 'Staff', 'doctor', 'staff']}>
               <DoctorDashboard />
