@@ -6,10 +6,10 @@ const Services = () => {
   const primaryGreen = '#27ae60';
 
   const services = [
-    { id: 1, title: "Cardiology", desc: "Heart health and surgery.", doctor: "Dr. Elena Rodriguez", detail: "Advanced diagnostics and cardiac care.", icon: "❤️" },
-    { id: 2, title: "Pediatrics", desc: "Child and infant healthcare.", doctor: "Dr. Sarah Chen", detail: "Wellness checkups and vaccinations.", icon: "🧒" },
-    { id: 3, title: "Emergency", desc: "24/7 Urgent medical care.", doctor: "Dr. James Miller", detail: "Trauma and acute care unit.", icon: "🚑" },
-    { id: 4, title: "Diagnostics", desc: "Lab and imaging services.", doctor: "Dr. Robert Vance", detail: "X-ray, MRI, and blood analysis.", icon: "🔬" }
+    { id: 1, title: "Cardiology", desc: "Heart health and surgery.", doctor: "Dr. Elena Rodriguez", detail: "Advanced diagnostics and cardiac care.", },
+    { id: 2, title: "Pediatrics", desc: "Child and infant healthcare.", doctor: "Dr. Sarah Chen", detail: "Wellness checkups and vaccinations.",  },
+    { id: 3, title: "Emergency", desc: "24/7 Urgent medical care.", doctor: "Dr. James Miller", detail: "Trauma and acute care unit.", },
+    { id: 4, title: "Diagnostics", desc: "Lab and imaging services.", doctor: "Dr. Robert Vance", detail: "X-ray, MRI, and blood analysis.",  }
   ];
 
   return (
